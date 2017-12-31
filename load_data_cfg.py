@@ -1,7 +1,8 @@
 import os
+import cfg
 
 
-classes = [1, 2, 3]
+classes = cfg.classes
 
 is_fft = True
 

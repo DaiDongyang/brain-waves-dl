@@ -1,6 +1,6 @@
 """filter, fft, normalization"""
 import numpy as np
-import config
+import load_data_cfg
 
 
 def filter_single_subset(data, filter_classes):
@@ -112,8 +112,8 @@ def scale_normalization(samples, max_v, min_v):
 # test_samples, test_ls = tvt.test_samples_ls()
 class TrainValiTest:
 
-    def __init__(self, is_fft=config.is_fft, norm_flag=config.norm_flag, train_fs=config.train_fs,
-                 vali_fs=config.vali_fs, test_fs=config.test_fs, classes=config.classes):
+    def __init__(self, is_fft=load_data_cfg.is_fft, norm_flag=load_data_cfg.norm_flag, train_fs=load_data_cfg.train_fs,
+                 vali_fs=load_data_cfg.vali_fs, test_fs=load_data_cfg.test_fs, classes=load_data_cfg.classes):
         self.is_fft = is_fft
         self.norm_flag = norm_flag
         self.train_fs = train_fs
