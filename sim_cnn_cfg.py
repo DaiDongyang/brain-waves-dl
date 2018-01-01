@@ -5,16 +5,16 @@ visible_device = '2'
 
 batch_size = 500
 
-loop_epoch_num = 5000
+loop_epoch_num = 100000
 
-log_epoch_num = 20
+log_epoch_num = 50
 
 # avoid rewrite
 persist_epoch_num = 50
 
 save_epoch_num = 5
 
-learning_rate = 0.5
+learning_rate = 1e-4
 
 # Consistent with is_fft
 origin_d = 1500

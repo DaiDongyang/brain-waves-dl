@@ -122,13 +122,6 @@ def main(_):
         sess.run(init)
         for i in range(loop_epoch_num):
             # train_epoch(x, y_, k_prob, train_step, train_set, sess)
-            is_epoch_end = False
-            while not is_epoch_end:
-                batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
-                train_step.run(feed_dict={
-                    x: batch_x, y_: batch_y, k_prob: train_k_prob
-                })
-            train_set.re_shuffle()
             if i % log_epoch_num == 0:
                 is_epoch_end = False
                 train_losses = list()
@@ -171,6 +164,13 @@ def main(_):
                 print('epoch %d , train_loss %g , train_acc %g , vali_loss %g , vali_acc %g' % (i,
                                                                                                 train_loss, train_acc,
                                                                                                 vali_loss, vali_acc))
+            is_epoch_end = False
+            while not is_epoch_end:
+                batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
+                train_step.run(feed_dict={
+                    x: batch_x, y_: batch_y, k_prob: train_k_prob
+                })
+            train_set.re_shuffle()
         # test_loss = loss_epoch(x, y_, k_prob, cross_entroy, test_set, sess)
         # test_acc = acc_epoch(x, y_, k_prob, accuracy, test_set, sess)
         test_losses = list()
