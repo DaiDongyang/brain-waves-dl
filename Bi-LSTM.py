@@ -7,6 +7,14 @@ import load_data
 import numpy as np
 #import matplotlib.pyplot as plt
 
+def convert_oneHot_to_num(data):
+    b = np.zeros(data.shape[0])
+    for i in range(0, data.shape[0]):
+        for j in range(0, data.shape[1]):
+            if (data[i][j] == 1):
+                break;
+        b[i] = j
+    return b
 
 # torch.manual_seed(1)    # reproducible
 
@@ -24,9 +32,9 @@ tvt.load()
 train_samples, train_ls = tvt.train_samples_ls()
 vali_samples, vali_ls = tvt.vali_samples_ls()
 test_samples, test_ls = tvt.test_samples_ls()
-train_ls = load_data.convert_oneHot_to_num(train_ls)
-vali_ls = load_data.convert_oneHot_to_num(vali_ls)
-test_ls = load_data.convert_oneHot_to_num(test_ls)
+train_ls = convert_oneHot_to_num(train_ls)
+vali_ls = convert_oneHot_to_num(vali_ls)
+test_ls = convert_oneHot_to_num(test_ls)
 train_samples = np.reshape(train_samples,(train_samples.shape[0],30,50))
 vali_samples = np.reshape(vali_samples,(vali_samples.shape[0],30,50))
 test_samples = np.reshape(test_samples,(test_samples.shape[0],30,50))
