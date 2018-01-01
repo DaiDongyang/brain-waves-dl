@@ -82,7 +82,7 @@ def main(_):
     save_epoch_num = sim_cnn_cfg.save_epoch_num
     learning_rate = sim_cnn_cfg.learning_rate
     origin_d = sim_cnn_cfg.origin_d
-    train_k_prob = sim_cnn_cfg.keep_prob
+    # train_k_prob = sim_cnn_cfg.keep_prob
     classes = cfg.classes
 
     t_v_t = load_data.TrainValiTest()
@@ -121,117 +121,60 @@ def main(_):
         init = tf.global_variables_initializer()
         sess.run(init)
         for i in range(loop_epoch_num):
-            # train_epoch(x, y_, k_prob, train_step, train_set, sess)
-            is_epoch_end = False
-            while not is_epoch_end:
-                batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
-                train_step.run(feed_dict={
-                    x: batch_x, y_: batch_y, k_prob: train_k_prob
-                })
+            train_epoch(x, y_, k_prob, train_step, train_set, sess)
             train_set.re_shuffle()
             if i % log_epoch_num == 0:
-                is_epoch_end = False
-                train_losses = list()
-                train_acces = list()
-                train_ws = list()
-                while not is_epoch_end:
-                    batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
-                    batch_loss = cross_entroy.eval(feed_dict={
-                        x: batch_x, y_: batch_y, k_prob: 1
-                    })
-                    train_losses.append(batch_loss)
-                    batch_acc = accuracy.eval(feed_dict={
-                        x: batch_x, y_: batch_y, k_prob: 1
-                    })
-                    train_acces.append(batch_acc)
-                    train_ws.append(len(batch_x))
-                train_loss = float(np.dot(train_losses, train_ws) / np.sum(train_ws))
-                train_acc = float(np.dot(train_acces, train_ws) / np.sum(train_ws))
-                vali_losses = list()
-                vali_acces = list()
-                vali_ws = list()
-                is_epoch_end = False
-                while not is_epoch_end:
-                    batch_x, batch_y, is_epoch_end = vali_set.next_batch_fix2(batch_size)
-                    batch_loss = cross_entroy.eval(feed_dict={
-                        x: batch_x, y_: batch_y, k_prob: 1
-                    })
-                    vali_losses.append(batch_loss)
-                    batch_acc = accuracy.eval(feed_dict={
-                        x: batch_x, y_: batch_y, k_prob: 1
-                    })
-                    vali_acces.append(batch_acc)
-                    vali_ws.append(len(batch_x))
-                vali_loss = float(np.dot(vali_losses, vali_ws)/np.sum(vali_ws))
-                vali_acc = float(np.dot(vali_acces, vali_ws)/np.sum(vali_ws))
-                # train_loss = loss_epoch(x, y_, k_prob, cross_entroy, train_set, sess)
-                # train_acc = acc_epoch(x, y_, k_prob, accuracy, train_set, sess)
-                # vali_loss = loss_epoch(x, y_, k_prob, cross_entroy, vali_set, sess)
-                # vali_acc = acc_epoch(x, y_, k_prob, accuracy, vali_set, sess)
+                train_loss = loss_epoch(x, y_, k_prob, cross_entroy, train_set, sess)
+                train_acc = acc_epoch(x, y_, k_prob, accuracy, train_set, sess)
+                vali_loss = loss_epoch(x, y_, k_prob, cross_entroy, vali_set, sess)
+                vali_acc = acc_epoch(x, y_, k_prob, accuracy, vali_set, sess)
                 print('epoch %d , train_loss %g , train_acc %g , vali_loss %g , vali_acc %g' % (i,
                                                                                                 train_loss, train_acc,
                                                                                                 vali_loss, vali_acc))
-        # test_loss = loss_epoch(x, y_, k_prob, cross_entroy, test_set, sess)
-        # test_acc = acc_epoch(x, y_, k_prob, accuracy, test_set, sess)
-        test_losses = list()
-        test_acces = list()
-        test_ws = list()
-        is_epoch_end = False
-        while not is_epoch_end:
-            batch_x, batch_y, is_epoch_end = test_set.next_batch_fix2(batch_size)
-            batch_loss = cross_entroy.eval(feed_dict={
-                x: batch_x, y_: batch_y, k_prob: 1
-            })
-            test_losses.append(batch_loss)
-            batch_acc = accuracy.eval(feed_dict={
-                x: batch_x, y_: batch_y, k_prob: 1
-            })
-            test_acces.append(batch_acc)
-            test_ws.append(len(batch_x))
-        test_loss = float(np.dot(test_losses, test_ws) / np.sum(test_ws))
-        test_acc = float(np.dot(test_acces, test_ws) / np.sum(test_ws))
+        test_loss = loss_epoch(x, y_, k_prob, cross_entroy, test_set, sess)
+        test_acc = acc_epoch(x, y_, k_prob, accuracy, test_set, sess)
         print('test_loss %g , test_acc %g' % (test_loss, test_acc))
 
-#
-# def train_epoch(x, y_, k_prob, train_step, train_set, sess):
-#     batch_size = sim_cnn_cfg.batch_size
-#     train_k_prob = sim_cnn_cfg.keep_prob
-#     is_epoch_end = False
-#     while not is_epoch_end:
-#         batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
-#         train_step.run(feed_dict={
-#             x: batch_x, y_: batch_y, k_prob: train_k_prob
-#         }, session=sess)
-#
-#
-# def loss_epoch(x, y_, k_prob, loss, d_set, sess):
-#     batch_size = sim_cnn_cfg.batch_size
-#     losses = list()
-#     weights = list()
-#     is_epoch_end = False
-#     while not is_epoch_end:
-#         batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
-#         batch_loss = loss.eval(feed_dict={
-#             x: batch_x, y_: batch_y, k_prob: 1
-#         }, session=sess)
-#         losses.append(batch_loss)
-#         weights.append(len(batch_x))
-#     return float(np.dot(losses, weights) / np.sum(weights))
-#
-#
-# def acc_epoch(x, y_, k_prob, acc, d_set, sess):
-#     batch_size = sim_cnn_cfg.batch_size
-#     acces = list()
-#     weights = list()
-#     is_epoch_end = False
-#     while not is_epoch_end:
-#         batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
-#         batch_acc = acc.eval(feed_dict={
-#             x: batch_x, y_: batch_y, k_prob: 1
-#         }, session=sess)
-#         acces.append(batch_acc)
-#         weights.append(len(batch_x))
-#     return float(np.dot(acces, weights) / np.sum(weights))
+
+def train_epoch(x, y_, k_prob, train_step, train_set, sess):
+    batch_size = sim_cnn_cfg.batch_size
+    train_k_prob = sim_cnn_cfg.keep_prob
+    is_epoch_end = False
+    while not is_epoch_end:
+        batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
+        train_step.run(feed_dict={
+            x: batch_x, y_: batch_y, k_prob: train_k_prob
+        }, session=sess)
+
+
+def loss_epoch(x, y_, k_prob, loss, d_set, sess):
+    batch_size = sim_cnn_cfg.batch_size
+    losses = list()
+    weights = list()
+    is_epoch_end = False
+    while not is_epoch_end:
+        batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
+        batch_loss = loss.eval(feed_dict={
+            x: batch_x, y_: batch_y, k_prob: 1
+        }, session=sess)
+        losses.append(batch_loss)
+        weights.append(len(batch_x))
+    return float(np.dot(losses, weights) / np.sum(weights))
+
+
+def acc_epoch(x, y_, k_prob, acc, d_set, sess):
+    batch_size = sim_cnn_cfg.batch_size
+    acces = list()
+    weights = list()
+    is_epoch_end = False
+    while not is_epoch_end:
+        batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
+        batch_acc = acc.eval(feed_dict={
+            x: batch_x, y_: batch_y, k_prob: 1
+        }, session=sess)
+        acces.append(batch_acc)
+        weights.append(len(batch_x))
+    return float(np.dot(acces, weights) / np.sum(weights))
 
 
 def weight_variable(shape):

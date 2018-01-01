@@ -17,7 +17,7 @@ def test_DataSet():
 
     batch_size = 2
     for i in range(5):
-        samples_batch, ls_batch, is_epoch_end = d_s.next_batch_fix(batch_size)
+        samples_batch, ls_batch, is_epoch_end = d_s.next_batch_fix2(batch_size)
         print(is_epoch_end)
         print_samples_ls(samples_batch, ls_batch)
 

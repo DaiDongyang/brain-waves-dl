@@ -20,7 +20,7 @@ class DataSet:
         np.random.shuffle(self.idxes)
 
     # if the size of the last batch for an epoch is less than batch_size, return a less batch
-    def next_batch_fix(self, batch_size):
+    def next_batch_fix2(self, batch_size):
         is_epoch_end = False
         end = self.next_iidx + batch_size
         if end >= self.data_size:
@@ -30,6 +30,12 @@ class DataSet:
         self.next_iidx = end % self.data_size
         batch_idxes = self.idxes[iidxes]
         return self.samples[batch_idxes], self.labels[batch_idxes], is_epoch_end
+
+    def next_batch_fix(self, batch_size):
+        samples, labels, is_epoch_end = self.next_batch_fix2(batch_size)
+        if is_epoch_end:
+            self.re_shuffle()
+        return samples, labels
 
     def next_batch(self, batch_size):
         end = self.next_iidx + batch_size
