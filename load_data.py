@@ -52,6 +52,12 @@ def convert_ls_1hot(ls, classes):
     return ls_1hot
 
 
+def convert_1hot_ls(one_hot, classes):
+    idx = np.argmax(one_hot, axis=1)
+    np_classes = np.asarray(classes)
+    return np_classes[idx]
+
+
 def div_samples_labels_1hot(data_set, classes):
     """
     data_set is 3000d + 1d (data_set), samples + labels
@@ -62,14 +68,17 @@ def div_samples_labels_1hot(data_set, classes):
     return samples, ls_1hot
 
 
-def load_origin_data(files, classes, is_filter=True):
+def load_origin_data(files, classes, is_filter=True, is_1hot=True):
     """
     load data from specified files (files is a list)
     for example, load train samples and ls use `load_origin_data(config.train_fs, config.classes)`
     :return: ls is one hot
     """
     data_set = load_files(files, classes, is_filter)
-    samples, ls = div_samples_labels_1hot(data_set, classes)
+    if is_1hot:
+        samples, ls = div_samples_labels_1hot(data_set, classes)
+    else:
+        samples, ls = div_samples_labels(data_set)
     return samples, ls
 
 
@@ -133,6 +142,8 @@ class TrainValiTest:
         self.vali_ls = None
         self.test_samples = None
         self.test_ls = None
+        self.raw_test_samples = None
+        self.raw_test_ls = None
         # self.load()
 
     def load(self):
@@ -165,6 +176,8 @@ class TrainValiTest:
         self.vali_ls = vali_ls
         self.test_samples = test_samples
         self.test_ls = test_ls
+        self.raw_test_samples, self.raw_test_ls = load_origin_data(self.test_fs, self.classes, is_filter=False,
+                                                                   is_1hot=False)
 
     def train_samples_ls(self):
         return self.train_samples, self.train_ls
@@ -174,3 +187,6 @@ class TrainValiTest:
 
     def test_samples_ls(self):
         return self.test_samples, self.test_ls
+
+    def raw_test_samples_ls(self):
+        return self.raw_test_samples, self.raw_test_ls

@@ -5,7 +5,7 @@ visible_device = '2'
 
 batch_size = 500
 
-loop_epoch_num = 500
+loop_epoch_num = 5
 
 log_epoch_num = 10
 
