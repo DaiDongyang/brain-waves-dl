@@ -17,15 +17,18 @@ def filter_single_subset(data, filter_classes):
     return data[idx]
 
 
-def load_filter_files(files, filter_classes):
+def load_files(files, filter_classes, is_filter=True):
     """
     filter from a list of npy files, and return filtered data combined from the npy files
     """
     dataset = list()
     for f in files:
         subset = np.load(f)
-        subset_filter = filter_single_subset(subset, filter_classes)
-        dataset.append(subset_filter)
+        if is_filter:
+            subset_filter = filter_single_subset(subset, filter_classes)
+            dataset.append(subset_filter)
+        else:
+            dataset.append(subset)
     return np.vstack(dataset)
 
 
@@ -59,13 +62,13 @@ def div_samples_labels_1hot(data_set, classes):
     return samples, ls_1hot
 
 
-def load_origin_data(files, classes):
+def load_origin_data(files, classes, is_filter=True):
     """
     load data from specified files (files is a list)
     for example, load train samples and ls use `load_origin_data(config.train_fs, config.classes)`
     :return: ls is one hot
     """
-    data_set = load_filter_files(files, classes)
+    data_set = load_files(files, classes, is_filter)
     samples, ls = div_samples_labels_1hot(data_set, classes)
     return samples, ls
 

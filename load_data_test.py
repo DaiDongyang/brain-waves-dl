@@ -18,7 +18,7 @@ def test_filter_files():
     fs = ['./origin_data/data_b_even/b_1_even.npy',
           './origin_data/data_b_even/b_2_even.npy',
           './origin_data/data_b_even/b_3_even.npy']
-    dataset = load_data.load_filter_files(fs, load_data_cfg.classes)
+    dataset = load_data.load_files(fs, load_data_cfg.classes)
     print(dataset.shape)
     print(np.unique(dataset[:, -1]))
     data, ls = load_data.div_samples_labels(dataset)

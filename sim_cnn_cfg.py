@@ -5,9 +5,9 @@ visible_device = '2'
 
 batch_size = 500
 
-loop_epoch_num = 100000
+loop_epoch_num = 500
 
-log_epoch_num = 50
+log_epoch_num = 10
 
 # avoid rewrite
 persist_epoch_num = 50
@@ -44,4 +44,4 @@ fc_d1 = int(np.ceil(np.ceil(origin_d / pool_strides[0])/pool_strides[0])) * conv
 
 fc_ds = [fc_d1, 256, 3]
 
-keep_prob = 0.5
+keep_prob = 0.1
