@@ -151,8 +151,8 @@ def raw_test_result(x, k_prob, p_r, raw_test_set, sess):
         p_r_idx_batch = p_r.eval(feed_dict={
             x: batch_x, k_prob: 1
         }, session=sess)
-        p_r_idx.append(p_r_idx_batch)
-        g_t.append(batch_y)
+        p_r_idx += list(p_r_idx_batch)
+        g_t += list(batch_y)
     np_pr_idx = np.vstack(p_r_idx)
     np_g_t = np.vstack(g_t)
     np_p_r = np_classes[np_pr_idx]

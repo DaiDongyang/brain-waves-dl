@@ -1,6 +1,6 @@
 """filter, fft, normalization"""
 import numpy as np
-import load_data_cfg
+import cfg
 
 
 def filter_single_subset(data, filter_classes):
@@ -124,8 +124,8 @@ def scale_normalization(samples, max_v, min_v):
 # test_samples, test_ls = tvt.test_samples_ls()
 class TrainValiTest:
 
-    def __init__(self, is_fft=load_data_cfg.is_fft, norm_flag=load_data_cfg.norm_flag, train_fs=load_data_cfg.train_fs,
-                 vali_fs=load_data_cfg.vali_fs, test_fs=load_data_cfg.test_fs, classes=load_data_cfg.classes):
+    def __init__(self, is_fft=cfg.is_fft, norm_flag=cfg.norm_flag, train_fs=cfg.train_fs,
+                 vali_fs=cfg.vali_fs, test_fs=cfg.test_fs, classes=cfg.classes):
         self.is_fft = is_fft
         self.norm_flag = norm_flag
         self.train_fs = train_fs
@@ -151,12 +151,14 @@ class TrainValiTest:
         train_samples, train_ls = load_origin_data(self.train_fs, self.classes)
         vali_samples, vali_ls = load_origin_data(self.vali_fs, self.classes)
         test_samples, test_ls = load_origin_data(self.test_fs, self.classes)
+        raw_test_samples, raw_test_ls = load_origin_data(self.test_fs, self.classes, is_filter=False, is_1hot=False)
 
         # fft
         if self.is_fft:
             train_samples = convert_to_freq_domain(train_samples)
             vali_samples = convert_to_freq_domain(vali_samples)
             test_samples = convert_to_freq_domain(test_samples)
+            raw_test_samples = convert_to_freq_domain(raw_test_samples)
 
         # normalization
         if self.norm_flag == 1:
@@ -164,11 +166,13 @@ class TrainValiTest:
             train_samples = standard_normalization(train_samples, self.mu, self.sigma)
             vali_samples = standard_normalization(vali_samples, self.mu, self.sigma)
             test_samples = standard_normalization(test_samples, self.mu, self.sigma)
+            raw_test_samples = standard_normalization(raw_test_samples, self.mu, self.sigma)
         elif self.norm_flag == 2:
             self.max_v, self.min_v = get_max_min(train_samples)
             train_samples = scale_normalization(train_samples, self.max_v, self.min_v)
             vali_samples = scale_normalization(vali_samples, self.max_v, self.min_v)
             test_samples = scale_normalization(test_samples, self.max_v, self.min_v)
+            raw_test_samples = scale_normalization(raw_test_samples, self.max_v, self.min_v)
 
         self.train_samples = train_samples
         self.train_ls = train_ls
@@ -176,8 +180,8 @@ class TrainValiTest:
         self.vali_ls = vali_ls
         self.test_samples = test_samples
         self.test_ls = test_ls
-        self.raw_test_samples, self.raw_test_ls = load_origin_data(self.test_fs, self.classes, is_filter=False,
-                                                                   is_1hot=False)
+        self.raw_test_samples = raw_test_samples
+        self.raw_test_ls = raw_test_ls
 
     def train_samples_ls(self):
         return self.train_samples, self.train_ls
