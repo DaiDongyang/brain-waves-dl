@@ -9,7 +9,7 @@ is_filter_vali = False
 is_filter_test = False
 
 # norm_flag 0: no normalization; 1: standards; 2: scale
-norm_flag = 2
+norm_flag = 1
 
 ###########################################
 # config about data files
