@@ -4,7 +4,7 @@ rnn_num_units = 16  # output_feature of rnn for one direction
 
 rnn_layers = 2
 
-rnn_is_bidirection = True
+rnn_is_bidirection = False
 
 batch_size = 256
 

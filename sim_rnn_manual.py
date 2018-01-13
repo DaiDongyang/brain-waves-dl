@@ -1,3 +1,4 @@
+# Failed
 import tensorflow as tf
 import cfg
 import sim_rnn_cfg
@@ -11,8 +12,7 @@ from sklearn.decomposition import PCA
 os.environ["CUDA_VISIBLE_DEVICES"] = sim_rnn_cfg.visible_device
 
 
-def my_rnn(cell, x):
-    [batch_size, _, _] = x.shape.as_list()
+def my_rnn(cell, x, batch_size=sim_rnn_cfg.batch_size):
     batch_channels = tf.unstack(tf.transpose(x, (1, 0, 2)))
     state = cell.zero_state(batch_size, tf.float32)
     output = None
@@ -21,8 +21,7 @@ def my_rnn(cell, x):
     return output
 
 
-def my_bi_rnn(cell_f, cell_b, x):
-    [batch_size, _, _] = x.shape.as_list()
+def my_bi_rnn(cell_f, cell_b, x, batch_size=sim_rnn_cfg.batch_size):
     batch_channels = tf.unstack(tf.transpose(x, (1, 0, 2)))
     state_f = cell_f.zero_state(batch_size, tf.float32)
     output_f = None
