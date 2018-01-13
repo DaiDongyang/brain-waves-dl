@@ -28,10 +28,11 @@ vali_n = ['SC4062E0.npy', 'SC4102E0.npy', 'SC4151E0.npy', 'SC4191E0.npy',
 test_n = ['SC4161E0.npy', 'SC4071E0.npy', 'SC4111E0.npy', 'SC4152E0.npy', 'SC4192E0.npy',
           'SC4032E0.npy', 'SC4072E0.npy']
 
-train_b_even = ['b_1_even.npy', 'b_2_even.npy', 'b_3_even.npy', 'b_4_even.npy', 'b_5_even.npy',
-                'b_6_even.npy', 'b_7_even.npy', 'b_8_even.npy', 'b_9_even.npy', 'b_10_even.npy',
-                'b_11_even.npy', 'b_12_even.npy', 'b_13_even.npy', 'b_14_even.npy', 'b_15_even.npy',
-                'b_16_even.npy', 'b_17_even.npy', 'b_18_even.npy', 'b_19_even.npy', 'b_20_even.npy']
+# train_b_even = ['b_1_even.npy', 'b_2_even.npy', 'b_3_even.npy', 'b_4_even.npy', 'b_5_even.npy',
+#                 'b_6_even.npy', 'b_7_even.npy', 'b_8_even.npy', 'b_9_even.npy', 'b_10_even.npy',
+#                 'b_11_even.npy', 'b_12_even.npy', 'b_13_even.npy', 'b_14_even.npy', 'b_15_even.npy',
+#                 'b_16_even.npy', 'b_17_even.npy', 'b_18_even.npy', 'b_19_even.npy', 'b_20_even.npy']
+train_b_even = []
 vali_b_even = []
 test_b_even = []
 

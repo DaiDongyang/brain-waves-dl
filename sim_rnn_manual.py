@@ -8,8 +8,33 @@ import os
 import sys
 from sklearn.decomposition import PCA
 
-
 os.environ["CUDA_VISIBLE_DEVICES"] = sim_rnn_cfg.visible_device
+
+
+def my_rnn(cell, x):
+    [batch_size, _, _] = x.shape.as_list()
+    batch_channels = tf.unstack(tf.transpose(x, (1, 0, 2)))
+    state = cell.zero_state(batch_size, tf.float32)
+    output = None
+    for batch_channel in batch_channels:
+        output, state = cell(batch_channel, state)
+    return output
+
+
+def my_bi_rnn(cell_f, cell_b, x):
+    [batch_size, _, _] = x.shape.as_list()
+    batch_channels = tf.unstack(tf.transpose(x, (1, 0, 2)))
+    state_f = cell_f.zero_state(batch_size, tf.float32)
+    output_f = None
+    state_b = cell_b.zero_state(batch_size, tf.float32)
+    output_b = None
+    for batch_channel in batch_channels:
+        output_f, state_f = cell_f(batch_channel, state_f)
+    for batch_channel_b in reversed(batch_channels):
+        output_b, state_b = cell_b(batch_channel_b, state_b)
+    if output_f is None or output_b is None:
+        return None
+    return tf.concat([output_f, output_b], axis=1)
 
 
 # x shape [batch_size, seq]
@@ -36,17 +61,12 @@ def deep_nn(x, k_p):
             [cell_func(sim_rnn_cfg.rnn_num_units) for _ in range(sim_rnn_cfg.rnn_layers)])
         cells_bw = tf.contrib.rnn.MultiRNNCell(
             [cell_func(sim_rnn_cfg.rnn_num_units) for _ in range(sim_rnn_cfg.rnn_layers)])
-        rnn_outputs, _ = tf.nn.bidirectional_dynamic_rnn(cells_fw, cells_bw, x_reshape,
-                                                         dtype=tf.float32, scope='rnn_fbw')
-        fw_outputs = rnn_outputs[0][:, -1, :]
-        bw_outputs = rnn_outputs[1][:, -1, :]
-        last_output = tf.concat([fw_outputs, bw_outputs], axis=1)
+        last_output = my_bi_rnn(cells_fw, cells_bw, x_reshape)
         # last_output =
     else:
         cells = tf.contrib.rnn.MultiRNNCell(
             [cell_func(sim_rnn_cfg.rnn_num_units) for _ in range(sim_rnn_cfg.rnn_layers)])
-        rnn_outputs, _ = tf.nn.dynamic_rnn(cells, x_reshape, dtype=tf.float32, scope='rnn_fw')
-        last_output = rnn_outputs[:, -1, :]
+        last_output = my_rnn(cells, x_reshape)
 
     # outputs [batch_size, rnn_num_units]
     with tf.name_scope('dropout'):
@@ -162,3 +182,4 @@ def acc_epoch(x, y_, k_prob, acc, d_set, sess):
 
 if __name__ == '__main__':
     tf.app.run(main=main, argv=[sys.argv[0]])
+
