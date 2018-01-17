@@ -1,15 +1,34 @@
 import os
 
+# ========================================
+# GPU
+visible_device = '0'
+per_process_gpu_memory_fraction = 0.3
+
+batch_size = 256
+
+loop_epoch_num = 600
+log_epoch_num = 5
+learning_rate = 0.05
+
+loss_weights = [1, 1, 1]
+
+
+# ==================================================
+# config about data
+
 classes = [1, 2, 3]
 
 is_fft = True
+
+fft_clip = 400
 
 is_filter_vali = False
 
 is_filter_test = False
 
 # norm_flag 0: no normalization; 1: standards; 2: scale
-norm_flag = 1
+norm_flag = 0
 
 ###########################################
 # config about data files
@@ -28,11 +47,11 @@ vali_n = ['SC4062E0.npy', 'SC4102E0.npy', 'SC4151E0.npy', 'SC4191E0.npy',
 test_n = ['SC4161E0.npy', 'SC4071E0.npy', 'SC4111E0.npy', 'SC4152E0.npy', 'SC4192E0.npy',
           'SC4032E0.npy', 'SC4072E0.npy']
 
-# train_b_even = ['b_1_even.npy', 'b_2_even.npy', 'b_3_even.npy', 'b_4_even.npy', 'b_5_even.npy',
-#                 'b_6_even.npy', 'b_7_even.npy', 'b_8_even.npy', 'b_9_even.npy', 'b_10_even.npy',
-#                 'b_11_even.npy', 'b_12_even.npy', 'b_13_even.npy', 'b_14_even.npy', 'b_15_even.npy',
-#                 'b_16_even.npy', 'b_17_even.npy', 'b_18_even.npy', 'b_19_even.npy', 'b_20_even.npy']
-train_b_even = []
+train_b_even = ['b_1_even.npy', 'b_2_even.npy', 'b_3_even.npy', 'b_4_even.npy', 'b_5_even.npy',
+                'b_6_even.npy', 'b_7_even.npy', 'b_8_even.npy', 'b_9_even.npy', 'b_10_even.npy',
+                'b_11_even.npy', 'b_12_even.npy', 'b_13_even.npy', 'b_14_even.npy', 'b_15_even.npy',
+                'b_16_even.npy', 'b_17_even.npy', 'b_18_even.npy', 'b_19_even.npy', 'b_20_even.npy']
+# train_b_even = []
 vali_b_even = []
 test_b_even = []
 
@@ -56,4 +75,45 @@ test_fs = test_n_fs + test_b_e_fs
 ##########################################
 
 # ================================================
+# config for cnn
+
+conv_fs = [[20, 1, 16], [20, 16, 32]]
+
+conv_stride = 1
+
+conv_padding = 'SAME'
+
+# if cnn_pool_type == 0, avg_pool; else max_pool
+cnn_pool_type = 1
+
+cnn_pool_padding = 'SAME'
+
+cnn_pool_ksize = [4]
+
+cnn_pool_strides = [4]
+
+
+# ===============================================
+# config for rnn
+
+rnn_seq_d = 25
+
+rnn_units_list = []
+
+rnn_is_bidirection = True
+
+rnn_cell_type = 'gru'  # 'gru', 'block_lstm'
+
+# ===============================================
+
+fc_w_shapes = [[32*25, 64], [64, 3]]
+
+dropout_probs = [1, 0.5, 1]
+
+# ===============================================
 # config for nn
+
+origin_d = 400
+
+
+

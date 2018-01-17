@@ -125,7 +125,7 @@ def scale_normalization(samples, max_v, min_v):
 class TrainValiTest:
 
     def __init__(self, is_fft=cfg.is_fft, norm_flag=cfg.norm_flag, train_fs=cfg.train_fs,
-                 vali_fs=cfg.vali_fs, test_fs=cfg.test_fs, classes=cfg.classes):
+                 vali_fs=cfg.vali_fs, test_fs=cfg.test_fs, classes=cfg.classes, fft_clip=cfg.fft_clip):
         self.is_fft = is_fft
         self.norm_flag = norm_flag
         self.train_fs = train_fs
@@ -144,6 +144,7 @@ class TrainValiTest:
         self.test_ls = None
         self.raw_test_samples = None
         self.raw_test_ls = None
+        self.fft_clip = fft_clip
         # self.load()
 
     def load(self):
@@ -151,7 +152,8 @@ class TrainValiTest:
         train_samples, train_ls = load_origin_data(self.train_fs, self.classes)
         vali_samples, vali_ls = load_origin_data(self.vali_fs, self.classes)
         test_samples, test_ls = load_origin_data(self.test_fs, self.classes)
-        raw_test_samples, raw_test_ls = load_origin_data(self.test_fs, self.classes, is_filter=False, is_1hot=False)
+        raw_test_samples, raw_test_ls = load_origin_data(self.test_fs, self.classes,
+                                                         is_filter=False, is_1hot=False)
 
         # fft
         if self.is_fft:
@@ -159,6 +161,11 @@ class TrainValiTest:
             vali_samples = convert_to_freq_domain(vali_samples)
             test_samples = convert_to_freq_domain(test_samples)
             raw_test_samples = convert_to_freq_domain(raw_test_samples)
+            if self.fft_clip > 0:
+                train_samples = train_samples[:, :self.fft_clip]
+                vali_samples = vali_samples[:, :self.fft_clip]
+                test_samples = test_samples[:, :self.fft_clip]
+                raw_test_samples = raw_test_samples[:, :self.fft_clip]
 
         # normalization
         if self.norm_flag == 1:
