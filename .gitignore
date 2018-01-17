@@ -2,3 +2,4 @@
 download_data/*
 origin_data/*
 __pycache__/*
+*.ipynb
