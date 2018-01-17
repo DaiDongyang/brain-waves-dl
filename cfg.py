@@ -1,17 +1,52 @@
 import os
 
-# ========================================
+id_str = '01162156'
+
+# ================================================
 # GPU
-visible_device = '0'
+visible_device = '3'
 per_process_gpu_memory_fraction = 0.3
+
+# =================================================
 
 batch_size = 256
 
-loop_epoch_num = 600
-log_epoch_num = 5
+loop_epoch_nums = [1000, 1, 1, 1]
+
+learning_rates = [0.1, 0.05, 0.02, 0.01]
+
+log_epoch_num = 1
+
 learning_rate = 0.05
 
 loss_weights = [1, 1, 1]
+
+dropout_probs = [1, 0.5, 1]
+
+optimizer_type = 'adadelta'     # 'adam', 'adadelta', 'grad'
+
+
+# ==================================================
+# checkpoint and restore
+
+is_train = True
+
+is_restore = False
+
+restore_file = ''
+
+restart_epoch_i = 0
+
+persist_checkpoint_interval = 1000
+
+persist_checkpoint_file = 'p-my-model/p-my-model' + id_str + '_'
+
+# ==================================================
+# result pickle
+
+gt_pickle = './pickles/gt_' + id_str + '.pickle'
+
+pr_pickle = './pickles/pr_' + id_str + '.pickle'
 
 
 # ==================================================
@@ -28,7 +63,7 @@ is_filter_vali = False
 is_filter_test = False
 
 # norm_flag 0: no normalization; 1: standards; 2: scale
-norm_flag = 0
+norm_flag = 1
 
 ###########################################
 # config about data files
@@ -108,7 +143,7 @@ rnn_cell_type = 'gru'  # 'gru', 'block_lstm'
 
 fc_w_shapes = [[32*25, 64], [64, 3]]
 
-dropout_probs = [1, 0.5, 1]
+
 
 # ===============================================
 # config for nn

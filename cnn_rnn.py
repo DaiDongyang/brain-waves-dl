@@ -6,6 +6,10 @@ import data_set
 import os
 import sys
 import time
+import operator
+import post_process
+from itertools import accumulate
+from functools import reduce
 
 os.environ["CUDA_VISIBLE_DEVICES"] = cfg.visible_device
 
@@ -115,119 +119,295 @@ def pool1d(x):
 
 
 def main(_):
-    loop_epoch_num = cfg.loop_epoch_num
     log_epoch_num = cfg.log_epoch_num
-    loss_weights = tf.constant(cfg.loss_weights, dtype=tf.float32)
-    learning_rate = cfg.learning_rate
-    origin_d = cfg.origin_d
-    classes = cfg.classes
-    fc_layers = len(cfg.fc_w_shapes)
-    t_v_t = load_data.TrainValiTest()
-    t_v_t.load()
-    train_samples, train_ls = t_v_t.train_samples_ls()
-    vali_samples, vali_ls = t_v_t.vali_samples_ls()
-    test_samples, test_ls = t_v_t.test_samples_ls()
+    loop_epoch_nums = cfg.loop_epoch_nums
+    learning_rates = cfg.learning_rates
+    loss_weight = tf.constant(cfg.loss_weights, dtype=tf.float32)
+    optimizer_type = cfg.optimizer_type
 
-    # pca = PCA(sim_rnn_cfg.origin_d)
-    # pca.fit(train_samples, train_ls)
-    # train_samples = pca.transform(train_samples)
-    # vali_samples = pca.transform(vali_samples)
-    # test_samples = pca.transform(test_samples)
+    origin_d = cfg.origin_d
+    n_classes = len(cfg.classes)
+    probs_size = len(cfg.dropout_probs)
+
+    restore_file = cfg.restore_file
+    restart_epoch_i = cfg.restart_epoch_i
+    persist_checkpoint_interval = cfg.persist_checkpoint_interval
+    persist_checkpoint_file = cfg.persist_checkpoint_file
+
+    tvt = load_data.TrainValiTest()
+    tvt.load()
+    train_samples, train_ls = tvt.train_samples_ls()
+    vali_samples, vali_ls = tvt.vali_samples_ls()
+    test_samples, test_ls = tvt.test_samples_ls()
 
     train_set = data_set.DataSet(train_samples, train_ls)
     vali_set = data_set.DataSet(vali_samples, vali_ls)
     test_set = data_set.DataSet(test_samples, test_ls)
 
     x = tf.placeholder(tf.float32, [None, origin_d])
-    y_ = tf.placeholder(tf.float32, [None, len(classes)])
-    k_prob = tf.placeholder(tf.float32, [fc_layers + 1])
+    y_ = tf.placeholder(tf.float32, [None, n_classes])
+    k_probs_ph = tf.placeholder(tf.float32, [probs_size])
+    lr_ph = tf.placeholder(tf.float32)
 
-    y_nn = deep_nn(x, k_prob)
+    y_nn = deep_nn(x, k_probs_ph)
 
     with tf.name_scope('loss'):
-        weights = tf.reduce_sum(loss_weights * y_, axis=1)
+        weights = tf.reduce_sum(loss_weight * y_, axis=1)
         unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_nn)
         weight_losses = unweighted_losses * weights
-    cross_entroy = tf.reduce_mean(weight_losses)
+    loss = tf.reduce_mean(weight_losses)
 
-    with tf.name_scope('adadelta_optimizer'):
-        train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entroy)
+    with tf.name_scope('optimizer'):
+        if optimizer_type.lower() == 'adam':
+            train_step = tf.train.AdamOptimizer(lr_ph).minimize(loss)
+        elif optimizer_type.lower() == 'adadelta':
+            train_step = tf.train.AdadeltaOptimizer(lr_ph).minimize(loss)
+        else:
+            train_step = tf.train.GradientDescentOptimizer(lr_ph).minimize(loss)
 
     with tf.name_scope('accuracy'):
         correct_prediction = tf.equal(tf.argmax(y_nn, 1), tf.argmax(y_, 1))
         correct_prediction = tf.cast(correct_prediction, tf.float32)
     accuracy = tf.reduce_mean(correct_prediction)
 
-    config = tf.ConfigProto()
-    # config.gpu_options.allow_growth = True
-    # config.gpu_options.per_process_gpu_memory_fraction = 0.4
-    start = time.time()
-    with tf.Session(config=config) as sess:
-        init = tf.global_variables_initializer()
-        sess.run(init)
-        for i in range(loop_epoch_num):
-            if i % log_epoch_num == 0:
-                train_loss = loss_epoch(x, y_, k_prob, cross_entroy, train_set, sess)
-                train_acc = acc_epoch(x, y_, k_prob, accuracy, train_set, sess)
-                vali_loss = loss_epoch(x, y_, k_prob, cross_entroy, vali_set, sess)
-                vali_acc = acc_epoch(x, y_, k_prob, accuracy, vali_set, sess)
-                print('epoch %d , train_loss %g , train_acc %g '
-                      ', vali_loss %g , vali_acc %g' % (i,
-                                                        train_loss,
-                                                        train_acc,
-                                                        vali_loss,
-                                                        vali_acc))
-            train_epoch(x, y_, k_prob, train_step, train_set, sess)
-            train_set.re_shuffle()
-        test_loss = loss_epoch(x, y_, k_prob, cross_entroy, test_set, sess)
-        test_acc = acc_epoch(x, y_, k_prob, accuracy, test_set, sess)
-        print('test_loss %g , test_acc %g' % (test_loss, test_acc))
-    end = time.time()
-    print("time ", (end - start) / 3600)
+    saver = tf.train.Saver()
+    sess_config = tf.ConfigProto()
+    sess_config.gpu_options.per_process_gpu_memory_fraction = cfg.per_process_gpu_memory_fraction
+
+    with tf.Session(config=sess_config) as sess:
+        start = time.time()
+        if cfg.is_train:
+            start_i = 0
+            end_i = reduce((lambda _a, _b: _a + _b), loop_epoch_nums, 0)
+            if cfg.is_restore:
+                saver.restore(sess, restore_file)
+                start_i = restart_epoch_i
+            else:
+                init = tf.global_variables_initializer()
+                sess.run(init)
+            for i in range(start_i, end_i):
+                if i % log_epoch_num == 0:
+                    train_acc, train_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss,
+                                                           train_set, sess)
+                    vali_acc, vali_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss,
+                                                         vali_set, sess)
+                    print('epoch %d , train_acc %g , train_loss %g , vali_acc %g , vali_loss %g' % (
+                        i, train_acc, train_loss, vali_acc, vali_loss))
+                if i % persist_checkpoint_interval == 0 and i >= persist_checkpoint_interval:
+                    saver.save(sess, persist_checkpoint_file+str(i))
+                lr = get_lr(learning_rates, loop_epoch_nums, i)
+                train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess)
+        else:
+            saver.restore(sess, restore_file)
+        test_acc, test_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss, test_set, sess)
+        print('test_acc %g , test_loss %g' % (test_acc, test_loss))
+        end = time.time()
+        print('total time %g s' % (end-start))
+        save_result(x, k_probs_ph, y_nn, test_set, sess)
 
 
-def train_epoch(x, y_, k_prob, train_step, train_set, sess):
+def save_result(x, k_probs_ph, y_nn, d_set, sess):
     batch_size = cfg.batch_size
-    train_k_prob = cfg.dropout_probs
+    gt_pickle = cfg.gt_pickle
+    pr_pickle = cfg.pr_pickle
+    dropout_probs_size = len(cfg.dropout_probs)
+    g_ts = list()
+    p_rs = list()
+    is_epoch_end = False
+    while not is_epoch_end:
+        batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
+        batch_y_nn = y_nn.eval(feed_dict={
+            x: batch_x,
+            k_probs_ph: np.ones(dropout_probs_size)
+        }, session=sess)
+        batch_p_r = np.argmax(batch_y_nn, 1)
+        batch_g_t = np.argmax(batch_y, 1)
+        g_ts += list(batch_p_r)
+        p_rs += list(batch_g_t)
+    post_process.dump_list(g_ts, gt_pickle)
+    post_process.dump_list(p_rs, pr_pickle)
+
+
+def train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess):
+    batch_size = cfg.batch_size
+    train_k_probs = cfg.dropout_probs
     is_epoch_end = False
     while not is_epoch_end:
         batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
         train_step.run(feed_dict={
-            x: batch_x, y_: batch_y, k_prob: train_k_prob
+            x: batch_x,
+            y_: batch_y,
+            k_probs_ph: train_k_probs,
+            lr_ph: lr
         }, session=sess)
 
 
-def loss_epoch(x, y_, k_prob, loss, d_set, sess):
+def acc_loss_epoch(x, y_, k_probs_ph, acc_tf, loss_tf, d_set, sess):
     batch_size = cfg.batch_size
     dropout_probs_size = len(cfg.dropout_probs)
+    acces = list()
     losses = list()
     weights = list()
     is_epoch_end = False
     while not is_epoch_end:
         batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
-        batch_loss = loss.eval(feed_dict={
-            x: batch_x, y_: batch_y, k_prob: np.ones(dropout_probs_size)
+        batch_acc = acc_tf.eval(feed_dict={
+            x: batch_x,
+            y_: batch_y,
+            k_probs_ph: np.ones(dropout_probs_size)
         }, session=sess)
-        losses.append(batch_loss)
-        weights.append(len(batch_x))
-    return float(np.dot(losses, weights) / np.sum(weights))
-
-
-def acc_epoch(x, y_, k_prob, acc, d_set, sess):
-    batch_size = cfg.batch_size
-    dropout_probs_size = len(cfg.dropout_probs)
-    acces = list()
-    weights = list()
-    is_epoch_end = False
-    while not is_epoch_end:
-        batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
-        batch_acc = acc.eval(feed_dict={
-            x: batch_x, y_: batch_y, k_prob: np.ones(dropout_probs_size)
+        batch_loss = loss_tf.eval(feed_dict={
+            x: batch_x,
+            y_: batch_y,
+            k_probs_ph: np.ones(dropout_probs_size)
         }, session=sess)
         acces.append(batch_acc)
+        losses.append(batch_loss)
         weights.append(len(batch_x))
-    return float(np.dot(acces, weights) / np.sum(weights))
+    epoch_acc = float(np.dot(acces, weights) / np.sum(weights))
+    epoch_loss = float(np.dot(losses, weights) / np.sum(weights))
+    return epoch_acc, epoch_loss
+
+
+def get_lr(lrs, train_epoch_nums, current_num):
+    acc_train_epoch_nums = accumulate(train_epoch_nums, operator.add)
+    for lr, acc_train_epoch_num in zip(lrs, acc_train_epoch_nums):
+        if current_num < acc_train_epoch_num:
+            return lr
+    return lrs[-1]
+
+
+def print_config(cfg_file='./cfg.py'):
+    with open(cfg_file, 'r') as cfg_f:
+        for line in cfg_f:
+            if '#' in line:
+                if 'old' in line:
+                    break
+                continue
+            if '=' in line:
+                print(line)
 
 
 if __name__ == '__main__':
+    print_config()
     tf.app.run(main=main, argv=[sys.argv[0]])
+    print('id_str', cfg.id_str)
+
+#
+# def main(_):
+#     loop_epoch_num = cfg.loop_epoch_num
+#     log_epoch_num = cfg.log_epoch_num
+#     loss_weights = tf.constant(cfg.loss_weights, dtype=tf.float32)
+#     learning_rate = cfg.learning_rate
+#     origin_d = cfg.origin_d
+#     classes = cfg.classes
+#     fc_layers = len(cfg.fc_w_shapes)
+#     t_v_t = load_data.TrainValiTest()
+#     t_v_t.load()
+#     train_samples, train_ls = t_v_t.train_samples_ls()
+#     vali_samples, vali_ls = t_v_t.vali_samples_ls()
+#     test_samples, test_ls = t_v_t.test_samples_ls()
+#
+#     # pca = PCA(sim_rnn_cfg.origin_d)
+#     # pca.fit(train_samples, train_ls)
+#     # train_samples = pca.transform(train_samples)
+#     # vali_samples = pca.transform(vali_samples)
+#     # test_samples = pca.transform(test_samples)
+#
+#     train_set = data_set.DataSet(train_samples, train_ls)
+#     vali_set = data_set.DataSet(vali_samples, vali_ls)
+#     test_set = data_set.DataSet(test_samples, test_ls)
+#
+#     x = tf.placeholder(tf.float32, [None, origin_d])
+#     y_ = tf.placeholder(tf.float32, [None, len(classes)])
+#     k_prob = tf.placeholder(tf.float32, [fc_layers + 1])
+#
+#     y_nn = deep_nn(x, k_prob)
+#
+#     with tf.name_scope('loss'):
+#         weights = tf.reduce_sum(loss_weights * y_, axis=1)
+#         unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_nn)
+#         weight_losses = unweighted_losses * weights
+#     cross_entroy = tf.reduce_mean(weight_losses)
+#
+#     with tf.name_scope('adadelta_optimizer'):
+#         train_step = tf.train.AdadeltaOptimizer(learning_rate).minimize(cross_entroy)
+#
+#     with tf.name_scope('accuracy'):
+#         correct_prediction = tf.equal(tf.argmax(y_nn, 1), tf.argmax(y_, 1))
+#         correct_prediction = tf.cast(correct_prediction, tf.float32)
+#     accuracy = tf.reduce_mean(correct_prediction)
+#
+#     config = tf.ConfigProto()
+#     # config.gpu_options.allow_growth = True
+#     # config.gpu_options.per_process_gpu_memory_fraction = 0.4
+#     start = time.time()
+#     with tf.Session(config=config) as sess:
+#         init = tf.global_variables_initializer()
+#         sess.run(init)
+#         for i in range(loop_epoch_num):
+#             if i % log_epoch_num == 0:
+#                 train_loss = loss_epoch(x, y_, k_prob, cross_entroy, train_set, sess)
+#                 train_acc = acc_epoch(x, y_, k_prob, accuracy, train_set, sess)
+#                 vali_loss = loss_epoch(x, y_, k_prob, cross_entroy, vali_set, sess)
+#                 vali_acc = acc_epoch(x, y_, k_prob, accuracy, vali_set, sess)
+#                 print('epoch %d , train_loss %g , train_acc %g '
+#                       ', vali_loss %g , vali_acc %g' % (i,
+#                                                         train_loss,
+#                                                         train_acc,
+#                                                         vali_loss,
+#                                                         vali_acc))
+#             train_epoch(x, y_, k_prob, train_step, train_set, sess)
+#             train_set.re_shuffle()
+#         test_loss = loss_epoch(x, y_, k_prob, cross_entroy, test_set, sess)
+#         test_acc = acc_epoch(x, y_, k_prob, accuracy, test_set, sess)
+#         print('test_loss %g , test_acc %g' % (test_loss, test_acc))
+#     end = time.time()
+#     print("time ", (end - start) / 3600)
+#
+#
+# def train_epoch(x, y_, k_prob, train_step, train_set, sess):
+#     batch_size = cfg.batch_size
+#     train_k_prob = cfg.dropout_probs
+#     is_epoch_end = False
+#     while not is_epoch_end:
+#         batch_x, batch_y, is_epoch_end = train_set.next_batch_fix2(batch_size)
+#         train_step.run(feed_dict={
+#             x: batch_x, y_: batch_y, k_prob: train_k_prob
+#         }, session=sess)
+#
+#
+# def loss_epoch(x, y_, k_prob, loss, d_set, sess):
+#     batch_size = cfg.batch_size
+#     dropout_probs_size = len(cfg.dropout_probs)
+#     losses = list()
+#     weights = list()
+#     is_epoch_end = False
+#     while not is_epoch_end:
+#         batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
+#         batch_loss = loss.eval(feed_dict={
+#             x: batch_x, y_: batch_y, k_prob: np.ones(dropout_probs_size)
+#         }, session=sess)
+#         losses.append(batch_loss)
+#         weights.append(len(batch_x))
+#     return float(np.dot(losses, weights) / np.sum(weights))
+#
+#
+# def acc_epoch(x, y_, k_prob, acc, d_set, sess):
+#     batch_size = cfg.batch_size
+#     dropout_probs_size = len(cfg.dropout_probs)
+#     acces = list()
+#     weights = list()
+#     is_epoch_end = False
+#     while not is_epoch_end:
+#         batch_x, batch_y, is_epoch_end = d_set.next_batch_fix2(batch_size)
+#         batch_acc = acc.eval(feed_dict={
+#             x: batch_x, y_: batch_y, k_prob: np.ones(dropout_probs_size)
+#         }, session=sess)
+#         acces.append(batch_acc)
+#         weights.append(len(batch_x))
+#     return float(np.dot(acces, weights) / np.sum(weights))
+#
+#
+# if __name__ == '__main__':
+#     tf.app.run(main=main, argv=[sys.argv[0]])
