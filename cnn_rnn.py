@@ -173,7 +173,7 @@ def main(_):
 
     saver = tf.train.Saver()
     sess_config = tf.ConfigProto()
-    sess_config.gpu_options.per_process_gpu_memory_fraction = cfg.per_process_gpu_memory_fraction
+    # sess_config.gpu_options.per_process_gpu_memory_fraction = cfg.per_process_gpu_memory_fraction
 
     with tf.Session(config=sess_config) as sess:
         # merged_summary_op = tf.merge_all_summaries()

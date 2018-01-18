@@ -1,19 +1,19 @@
 import os
 
-id_str = '01170842'
+id_str = '01171428'
 
 # ================================================
 # GPU
 visible_device = '3'
-per_process_gpu_memory_fraction = 1
+# per_process_gpu_memory_fraction = 1
 
 # =================================================
 
 batch_size = 256
 
-loop_epoch_nums = [50, 50, 50, 50]
+loop_epoch_nums = [150, 150, 150, 200, 200]
 
-learning_rates = [0.1, 0.05, 0.02, 0.01]
+learning_rates = [0.1, 0.05, 0.02, 0.01, 0.005]
 
 log_epoch_num = 5
 
@@ -26,7 +26,7 @@ dropout_probs = [1, 0.2, 0.5]
 optimizer_type = 'grad'     # 'adam', 'adadelta', 'grad'
 
 
-origin_d = 400
+origin_d = 1500
 
 
 # ==================================================
@@ -59,14 +59,14 @@ classes = [1, 2, 3]
 
 is_fft = True
 
-fft_clip = 400
+fft_clip = -1
 
 is_filter_vali = False
 
 is_filter_test = False
 
 # norm_flag 0: no normalization; 1: standards; 2: scale
-norm_flag = 0
+norm_flag = 1
 
 ###########################################
 # config about data files
@@ -123,7 +123,7 @@ test_fs = test_n_fs + test_b_e_fs
 # ================================================
 # config for cnn
 
-conv_fs = [[20, 1, 16], [20, 16, 32]]
+conv_fs = [[10, 1, 16], [10, 16, 32]]
 
 conv_stride = 1
 
@@ -152,7 +152,7 @@ rnn_cell_type = 'gru'  # 'gru', 'block_lstm'
 
 # ===============================================
 
-fc_w_shapes = [[400*8, 64], [64, 3]]
+fc_w_shapes = [[int(1500*32/4), 64], [64, 3]]
 
 # ===============================================
 # config for nn
