@@ -26,8 +26,8 @@ def deep_nn(x, k_probs):
 
     # with tf.name_scope('dropout0'):
     #     h_cnn_drop = tf.nn.dropout(h_cnn, k_probs[0])
-
-    h_rnn = rnn(h_cnn)
+    with tf.name_scope('rnn'):
+        h_rnn = rnn(h_cnn)
 
     with tf.name_scope('dropout0'):
         h_rnn_drop = tf.nn.dropout(h_rnn, k_probs[0])
@@ -51,7 +51,7 @@ def cnn(x, cnn_fs=cfg.conv_fs):
 def rnn(x, rnn_units_ls=cfg.rnn_units_list, cell_type=cfg.rnn_cell_type,
         is_bi=cfg.rnn_is_bidirection):
     if len(rnn_units_ls) < 1:
-        with tf.name_scope('reshape_rnn'):
+        with tf.name_scope('reshape1'):
             [d1, d2, d3] = x.shape.as_list()
             x_flat = tf.reshape(x, [-1, d2 * d3])
             return x_flat
@@ -124,6 +124,7 @@ def main(_):
     learning_rates = cfg.learning_rates
     loss_weight = tf.constant(cfg.loss_weights, dtype=tf.float32)
     optimizer_type = cfg.optimizer_type
+    batch_size = cfg.batch_size
 
     origin_d = cfg.origin_d
     n_classes = len(cfg.classes)
@@ -175,6 +176,10 @@ def main(_):
     sess_config.gpu_options.per_process_gpu_memory_fraction = cfg.per_process_gpu_memory_fraction
 
     with tf.Session(config=sess_config) as sess:
+        # merged_summary_op = tf.merge_all_summaries()
+        tf.summary.scalar("loss", loss)
+        merged_summary_op = tf.summary.merge_all()
+        summary_writer = tf.summary.FileWriter('./logs', sess.graph)
         start = time.time()
         if cfg.is_train:
             start_i = 0
@@ -197,6 +202,10 @@ def main(_):
                     saver.save(sess, persist_checkpoint_file+str(i))
                 lr = get_lr(learning_rates, loop_epoch_nums, i)
                 train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess)
+                # summary_str = sess.run(merged_summary_op, feed_dict={
+                #
+                # })
+                # summary_writer.add_summary(summary_str, train_set.batch_num(batch_size) * i)
         else:
             saver.restore(sess, restore_file)
         test_acc, test_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss, test_set, sess)
@@ -222,8 +231,8 @@ def save_result(x, k_probs_ph, y_nn, d_set, sess):
         }, session=sess)
         batch_p_r = np.argmax(batch_y_nn, 1)
         batch_g_t = np.argmax(batch_y, 1)
-        g_ts += list(batch_p_r)
-        p_rs += list(batch_g_t)
+        g_ts += list(batch_g_t)
+        p_rs += list(batch_p_r)
     post_process.dump_list(g_ts, gt_pickle)
     post_process.dump_list(p_rs, pr_pickle)
 
