@@ -70,7 +70,7 @@ def rnn(x, rnn_units_ls=cfg.rnn_units_list, cell_type=cfg.rnn_cell_type,
         rnn_outputs, _ = tf.nn.bidirectional_dynamic_rnn(cells_fw, cells_bw, x,
                                                          dtype=tf.float32, scope='rnn_fbw')
         fw_outputs = rnn_outputs[0][:, -1, :]
-        bw_outputs = rnn_outputs[1][:, -1, :]
+        bw_outputs = rnn_outputs[1][:, 0, :]
         last_output = tf.concat([fw_outputs, bw_outputs], axis=1)
     else:
         cells = tf.contrib.rnn.MultiRNNCell([cell_func(rnn_unit) for rnn_unit in rnn_units_ls])
@@ -141,7 +141,8 @@ def main(_):
     vali_samples, vali_ls = tvt.vali_samples_ls()
     test_samples, test_ls = tvt.test_samples_ls()
 
-    train_set = data_set.DataSet(train_samples, train_ls)
+    # print(len(train_samples[::1000]))
+    train_set = data_set.DataSet(train_samples[::5000], train_ls[::5000])
     vali_set = data_set.DataSet(vali_samples, vali_ls)
     test_set = data_set.DataSet(test_samples, test_ls)
 
@@ -151,11 +152,13 @@ def main(_):
     lr_ph = tf.placeholder(tf.float32)
 
     y_nn = deep_nn(x, k_probs_ph)
+    # y_nn_softmax = tf.nn.softmax(y_nn)
 
     with tf.name_scope('loss'):
         weights = tf.reduce_sum(loss_weight * y_, axis=1)
         unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_nn)
         weight_losses = unweighted_losses * weights
+        # weight_losses = focal_loss(y_, y_nn_softmax)
     loss = tf.reduce_mean(weight_losses)
 
     with tf.name_scope('optimizer'):
@@ -295,6 +298,34 @@ def print_config(cfg_file='./cfg.py'):
                 continue
             if '=' in line:
                 print(line)
+
+
+def focal_loss(labels, logits, gamma=1., alpha=1.):
+    """
+    focal loss for multi-classification
+    FL(p_t)=-alpha(1-p_t)^{gamma}ln(p_t)
+    Notice: logits is probability after softmax
+    gradient is d(Fl)/d(p_t) not d(Fl)/d(x) as described in paper
+    d(Fl)/d(p_t) * [p_t(1-p_t)] = d(Fl)/d(x)
+    Lin, T.-Y., Goyal, P., Girshick, R., He, K., & Dollár, P. (2017).
+    Focal Loss for Dense Object Detection, 130(4), 485–491.
+    https://doi.org/10.1016/j.ajodo.2005.02.022
+    :param labels: ground truth labels, shape of [batch_size, num_cls]
+    :param logits: model's output, shape of [batch_size, num_cls]
+    :param gamma:
+    :param alpha:
+    :return: shape of [batch_size]
+    """
+    epsilon = 1.e-9
+    # onehot_labels = tf.to_int64(labels)
+
+    model_out = tf.add(logits, epsilon)
+    ce = tf.multiply(labels, -tf.log(model_out))
+    weight = tf.multiply(labels, tf.pow(tf.subtract(1., model_out), gamma))
+    fl = tf.multiply(alpha, tf.multiply(weight, ce))
+    # reduced_fl = tf.reduce_max(fl, axis=1)
+    reduced_fl = tf.reduce_sum(fl, axis=1)  # same as reduce_max
+    return reduced_fl
 
 
 if __name__ == '__main__':
