@@ -1,19 +1,19 @@
 import os
 
-id_str = '01182357'
+id_str = '01191011'
 
 # ================================================
 # GPU
-visible_device = '3'
+visible_device = '2'
 # per_process_gpu_memory_fraction = 1
 
 # =================================================
 
-batch_size = 256
+batch_size = 512
 
-loop_epoch_nums = [50, 200, 200, 200]
+loop_epoch_nums = [100, 100, 100, 100]
 
-learning_rates = [0.2, 0.1, 0.05, 0.001]
+learning_rates = [0.1, 0.05, 0.02, 0.01]
 
 log_epoch_num = 5
 
@@ -31,6 +31,12 @@ origin_d = 1500
 
 # ==================================================
 # checkpoint and restore
+only_run_final_test = False
+
+final_result_txt = 'result.txt'
+
+
+tvt_params_pickle_name = './pickles/tvt_params.pickle'
 
 is_train = True
 
@@ -42,7 +48,7 @@ restart_epoch_i = 0
 
 persist_checkpoint_interval = 200
 
-persist_checkpoint_file = 'p-my-model/p-my-model' + id_str + '_'
+persist_checkpoint_file = 'p-my-model1/p-my-model' + id_str + '_'
 
 # ==================================================
 # result pickle
@@ -70,6 +76,8 @@ norm_flag = 1
 
 ###########################################
 # config about data files
+final_test_f = './'
+
 prefix_n = './origin_data/data_n'
 prefix_b_even = './origin_data/data_b_even'
 prefix_b_odd = './origin_data/data_b_odd'
@@ -125,7 +133,7 @@ test_fs = test_n_fs + test_b_e_fs
 # ================================================
 # config for cnn
 
-conv_fs = [[10, 1, 16], [10, 16, 32]]
+conv_fs = [[20, 1, 16], [20, 16, 32]]
 
 conv_stride = 1
 
@@ -144,9 +152,10 @@ cnn_pool_strides = [4]
 # ===============================================
 # config for rnn
 
-rnn_seq_d = 25
+# rnn_seq_d = 25
 
-rnn_units_list = [128]
+# rnn_units_list = [128]
+rnn_units_list = []
 
 rnn_is_bidirection = True
 
@@ -154,7 +163,7 @@ rnn_cell_type = 'gru'  # 'gru', 'block_lstm'
 
 # ===============================================
 
-fc_w_shapes = [[256, 16], [16, 3]]
+fc_w_shapes = [[3008, 256], [256, 3]]
 
 # ===============================================
 # config for nn

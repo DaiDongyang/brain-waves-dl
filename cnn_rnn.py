@@ -1,7 +1,7 @@
 import tensorflow as tf
 import cfg
 import numpy as np
-import load_data_1
+import load_data
 import data_set
 import os
 import sys
@@ -135,23 +135,15 @@ def main(_):
     persist_checkpoint_interval = cfg.persist_checkpoint_interval
     persist_checkpoint_file = cfg.persist_checkpoint_file
 
-    tvt = load_data_1.TrainValiTest()
-    tvt.load()
-    train_samples, train_ls = tvt.train_samples_ls()
-    vali_samples, vali_ls = tvt.vali_samples_ls()
-    test_samples, test_ls = tvt.test_samples_ls()
-
-    # print(len(train_samples[::1000]))
-    train_set = data_set.DataSet(train_samples[::5000], train_ls[::5000])
-    vali_set = data_set.DataSet(vali_samples, vali_ls)
-    test_set = data_set.DataSet(test_samples, test_ls)
-
     x = tf.placeholder(tf.float32, [None, origin_d])
     y_ = tf.placeholder(tf.float32, [None, n_classes])
     k_probs_ph = tf.placeholder(tf.float32, [probs_size])
     lr_ph = tf.placeholder(tf.float32)
 
     y_nn = deep_nn(x, k_probs_ph)
+
+    tvt = load_data.TrainValiTest()
+
     # y_nn_softmax = tf.nn.softmax(y_nn)
 
     with tf.name_scope('loss'):
@@ -181,41 +173,65 @@ def main(_):
     with tf.Session(config=sess_config) as sess:
         # merged_summary_op = tf.merge_all_summaries()
         tf.summary.scalar("loss", loss)
-        merged_summary_op = tf.summary.merge_all()
-        summary_writer = tf.summary.FileWriter('./logs', sess.graph)
+        # merged_summary_op = tf.summary.merge_all()
+        tf.summary.FileWriter('./logs', sess.graph)
         start = time.time()
-        if cfg.is_train:
-            start_i = 0
-            end_i = reduce((lambda _a, _b: _a + _b), loop_epoch_nums, 0)
-            if cfg.is_restore:
-                saver.restore(sess, restore_file)
-                start_i = restart_epoch_i
+        if not cfg.only_run_final_test:
+            tvt.load()
+            tvt.save_params()
+            train_samples, train_ls = tvt.train_samples_ls()
+            vali_samples, vali_ls = tvt.vali_samples_ls()
+            test_samples, test_ls = tvt.test_samples_ls()
+            if cfg.is_train:
+                # print(len(train_samples[::1000]))
+                train_set = data_set.DataSet(train_samples, train_ls)
+                vali_set = data_set.DataSet(vali_samples, vali_ls)
+                test_set = data_set.DataSet(test_samples, test_ls)
+                start_i = 0
+                end_i = reduce((lambda _a, _b: _a + _b), loop_epoch_nums, 0)
+                if cfg.is_restore:
+                    saver.restore(sess, restore_file)
+                    start_i = restart_epoch_i
+                else:
+                    init = tf.global_variables_initializer()
+                    sess.run(init)
+                for i in range(start_i, end_i):
+                    if i % log_epoch_num == 0:
+                        train_acc, train_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss,
+                                                               train_set, sess)
+                        vali_acc, vali_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss,
+                                                             vali_set, sess)
+                        print('epoch %d , train_acc %g , train_loss %g , vali_acc %g , vali_loss %g' % (
+                            i, train_acc, train_loss, vali_acc, vali_loss))
+                    if i % persist_checkpoint_interval == 0 and i >= persist_checkpoint_interval:
+                        saver.save(sess, persist_checkpoint_file+str(i))
+                    lr = get_lr(learning_rates, loop_epoch_nums, i)
+                    train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess)
+                    # summary_str = sess.run(merged_summary_op, feed_dict={
+                    #
+                    # })
+                    # summary_writer.add_summary(summary_str, train_set.batch_num(batch_size) * i)
+                saver.save(sess, persist_checkpoint_file + str(end_i))
             else:
-                init = tf.global_variables_initializer()
-                sess.run(init)
-            for i in range(start_i, end_i):
-                if i % log_epoch_num == 0:
-                    train_acc, train_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss,
-                                                           train_set, sess)
-                    vali_acc, vali_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss,
-                                                         vali_set, sess)
-                    print('epoch %d , train_acc %g , train_loss %g , vali_acc %g , vali_loss %g' % (
-                        i, train_acc, train_loss, vali_acc, vali_loss))
-                if i % persist_checkpoint_interval == 0 and i >= persist_checkpoint_interval:
-                    saver.save(sess, persist_checkpoint_file+str(i))
-                lr = get_lr(learning_rates, loop_epoch_nums, i)
-                train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess)
-                # summary_str = sess.run(merged_summary_op, feed_dict={
-                #
-                # })
-                # summary_writer.add_summary(summary_str, train_set.batch_num(batch_size) * i)
+                saver.restore(sess, restore_file)
+            test_acc, test_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss, test_set, sess)
+            print('test_acc %g , test_loss %g' % (test_acc, test_loss))
+
+            save_result(x, k_probs_ph, y_nn, test_set, sess)
         else:
-            saver.restore(sess, restore_file)
-        test_acc, test_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss, test_set, sess)
-        print('test_acc %g , test_loss %g' % (test_acc, test_loss))
-        end = time.time()
-        print('total time %g s' % (end-start))
-        save_result(x, k_probs_ph, y_nn, test_set, sess)
+            final_test_samples = tvt.load_final_test_samples()
+            final_test_set = data_set.DataSet(final_test_samples, None)
+            # todo: implement
+    end = time.time()
+    print('total time %g s' % (end - start))
+
+
+def save_only_predict_result(x, k_probs_ph, y_nn, d_set, sess):
+    batch_size = cfg.batch_size
+    final_result_txt = cfg.final_result_txt
+    classes = cfg.classes
+    dropout_probs_size = len(cfg.dropout_probs)
+
 
 
 def save_result(x, k_probs_ph, y_nn, d_set, sess):

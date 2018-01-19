@@ -3,7 +3,7 @@ from torch import nn
 from torch.autograd import Variable
 import torchvision.datasets as dsets
 import torchvision.transforms as transforms
-import load_data_1
+import load_data
 import numpy as np
 #import matplotlib.pyplot as plt
 
@@ -27,7 +27,7 @@ LR = 0.01               # learning rate
 #DOWNLOAD_MNIST = True   # set to True if haven't download the data
 
 
-tvt = load_data_1.TrainValiTest()
+tvt = load_data.TrainValiTest()
 tvt.load()
 train_samples, train_ls = tvt.train_samples_ls()
 vali_samples, vali_ls = tvt.vali_samples_ls()

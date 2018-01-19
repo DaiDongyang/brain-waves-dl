@@ -6,6 +6,12 @@ from collections import Counter
 origin_dim = 1000
 
 
+def save_test_mat():
+    mat_name = 'test_1222_317203191.mat'
+    d = sio.loadmat(mat_name)
+    np.save('final_test.npy', d['final_test'])
+
+
 def save_train_mat():
     preffix = './data'
     mat_name = './train_1222_578001438.mat'

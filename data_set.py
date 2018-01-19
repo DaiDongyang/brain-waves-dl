@@ -7,13 +7,17 @@ class DataSet:
         self.samples = samples
         self.labels = labels
         size = len(samples)
-        if size != len(labels):
+        if labels is not None and size != len(labels) :
             raise NameError('size not equal for samples and labels')
+        if labels is None:
+            self.labels = np.zeros((size, 1))
         self.data_size = size
         idxes = np.array(range(size))
         np.random.shuffle(idxes)
         # random order for all indexes
         self.idxes = idxes
+        # self.or_idexes = np.array(range(size))
+        self.or_next_iidx = 0
         self.next_iidx = 0
 
     def re_shuffle(self):
@@ -30,6 +34,17 @@ class DataSet:
         self.next_iidx = end % self.data_size
         batch_idxes = self.idxes[iidxes]
         return self.samples[batch_idxes], self.labels[batch_idxes], is_epoch_end
+
+    def next_batch_fix2_order(self, batch_size):
+        is_epoch_end = False
+        end = self.or_next_iidx + batch_size
+        if end >= self.data_size:
+            is_epoch_end = True
+            end = self.data_size
+        iidxes = np.arange(self.or_next_iidx, end)
+        self.or_next_iidx = end % self.data_size
+        # batch_idxes = self.or_idexes[iidxes]
+        return self.samples[iidxes], self.labels[iidxes], is_epoch_end
 
     def next_batch_fix(self, batch_size):
         samples, labels, is_epoch_end = self.next_batch_fix2(batch_size)
