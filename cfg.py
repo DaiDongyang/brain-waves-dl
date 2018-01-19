@@ -13,9 +13,9 @@ visible_device = '3'
 
 batch_size = 256
 
-loop_epoch_nums = [150, 150, 150, 200, 200]
+loop_epoch_nums = [150, 100, 100, 100]
 
-learning_rates = [0.1, 0.05, 0.02, 0.01, 0.005]
+learning_rates = [0.1, 0.05, 0.02, 0.01]
 
 log_epoch_num = 5
 
@@ -27,6 +27,7 @@ dropout_probs = [1, 0.2, 0.5]
 
 optimizer_type = 'grad'     # 'adam', 'adadelta', 'grad'
 
+final_result_txt = id_str + '_result.txt'
 
 origin_d = 1500
 

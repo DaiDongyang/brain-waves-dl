@@ -231,6 +231,7 @@ def main(_):
             saver.restore(sess, restore_file)
         final_test_samples = tvt.load_final_test_samples()
         final_test_set = data_set.DataSet(final_test_samples, None)
+        print('final test file', cfg.final_test_f)
         save_only_predict_result(x, k_probs_ph, y_nn, final_test_set, sess)
     end = time.time()
     print('total time %g s' % (end - start))
