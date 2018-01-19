@@ -2,6 +2,7 @@
 import numpy as np
 import cfg
 import pickle
+from sklearn.decomposition import PCA
 
 
 def filter_single_subset(data, filter_classes):
@@ -127,7 +128,8 @@ class TrainValiTest:
 
     def __init__(self, is_fft=cfg.is_fft, norm_flag=cfg.norm_flag, train_fs=cfg.train_fs,
                  vali_fs=cfg.vali_fs, test_fs=cfg.test_fs, classes=cfg.classes,
-                 fft_clip=cfg.fft_clip, params_pickle=cfg.tvt_params_pickle_name):
+                 fft_clip=cfg.fft_clip, params_pickle=cfg.tvt_params_pickle_name,
+                 features_reduce=cfg.features_reduce, reduce_dim=cfg.reduce_dim):
         self.is_fft = is_fft
         self.norm_flag = norm_flag
         self.train_fs = train_fs
@@ -148,6 +150,9 @@ class TrainValiTest:
         self.raw_test_ls = None
         self.fft_clip = fft_clip
         self.params_pickle = params_pickle
+        self.features_reduce = features_reduce
+        self.reduce_dim = reduce_dim
+        self.pca = None
         # self.load()
 
     def load(self):
@@ -169,9 +174,16 @@ class TrainValiTest:
                 vali_samples = vali_samples[:, :self.fft_clip]
                 test_samples = test_samples[:, :self.fft_clip]
                 raw_test_samples = raw_test_samples[:, :self.fft_clip]
-
-        self.mu, self.sigma = get_mu_sigma(train_samples[::10])
-        self.max_v, self.min_v = get_max_min(train_samples[::10])
+        pca = PCA(n_components=self.reduce_dim)
+        pca.fit(train_samples)
+        self.pca = pca
+        if self.features_reduce == 1:
+            train_samples = pca.transform(train_samples)
+            vali_samples = pca.transform(vali_samples)
+            test_samples = pca.transform(test_samples)
+            raw_test_samples = pca.transform(raw_test_samples)
+        self.mu, self.sigma = get_mu_sigma(train_samples)
+        self.max_v, self.min_v = get_max_min(train_samples)
         # normalization
         if self.norm_flag == 1:
             # self.mu, self.sigma = get_mu_sigma(train_samples)
@@ -209,13 +221,13 @@ class TrainValiTest:
         return self.raw_test_samples, self.raw_test_ls
 
     def save_params(self):
-        params = (self.mu, self.sigma, self.max_v, self.min_v)
+        params = (self.mu, self.sigma, self.max_v, self.min_v, self.pca)
         with open(self.params_pickle, 'wb') as pickle_f:
             pickle.dump(params, pickle_f)
 
     def load_params(self):
         with open(self.params_pickle, 'rb') as pickle_f:
-            (self.mu, self.sigma, self.max_v, self.min_v) = pickle.load(pickle_f)
+            (self.mu, self.sigma, self.max_v, self.min_v, self.pca) = pickle.load(pickle_f)
 
     # def print_params(self):
     #     print(self.mu, self.sigma, self.max_v, self.min_v)
@@ -230,6 +242,8 @@ class TrainValiTest:
 
         if self.mu is None or self.sigma is None:
             self.load_params()
+        if self.features_reduce == 1:
+            final_test_samples = self.pca.transform(final_test_samples)
 
         if self.norm_flag == 1:
             final_test_samples = standard_normalization(final_test_samples, self.mu, self.sigma)

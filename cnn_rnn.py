@@ -144,14 +144,17 @@ def main(_):
 
     tvt = load_data.TrainValiTest()
 
-    # y_nn_softmax = tf.nn.softmax(y_nn)
-
     with tf.name_scope('loss'):
-        weights = tf.reduce_sum(loss_weight * y_, axis=1)
-        unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_nn)
-        weight_losses = unweighted_losses * weights
-        # weight_losses = focal_loss(y_, y_nn_softmax)
-    loss = tf.reduce_mean(weight_losses)
+        if cfg.loss_type == 1:
+            weights = tf.reduce_sum(loss_weight * y_, axis=1)
+            unweighted_losses = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_nn)
+            weight_losses = unweighted_losses * weights
+        elif cfg.loss_weights == 2:
+            y_nn_softmax = tf.nn.softmax(y_nn)
+            weight_losses = focal_loss(y_, y_nn_softmax)
+        else:
+            weight_losses = tf.nn.softmax_cross_entropy_with_logits(labels=y_, logits=y_nn)
+        loss = tf.reduce_mean(weight_losses)
 
     with tf.name_scope('optimizer'):
         if optimizer_type.lower() == 'adam':
@@ -182,11 +185,12 @@ def main(_):
             train_samples, train_ls = tvt.train_samples_ls()
             vali_samples, vali_ls = tvt.vali_samples_ls()
             test_samples, test_ls = tvt.test_samples_ls()
+
+            train_set = data_set.DataSet(train_samples, train_ls)
+            vali_set = data_set.DataSet(vali_samples, vali_ls)
+            test_set = data_set.DataSet(test_samples, test_ls)
             if cfg.is_train:
                 # print(len(train_samples[::1000]))
-                train_set = data_set.DataSet(train_samples, train_ls)
-                vali_set = data_set.DataSet(vali_samples, vali_ls)
-                test_set = data_set.DataSet(test_samples, test_ls)
                 start_i = 0
                 end_i = reduce((lambda _a, _b: _a + _b), loop_epoch_nums, 0)
                 if cfg.is_restore:
@@ -201,10 +205,11 @@ def main(_):
                                                                train_set, sess)
                         vali_acc, vali_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss,
                                                              vali_set, sess)
-                        print('epoch %d , train_acc %g , train_loss %g , vali_acc %g , vali_loss %g' % (
-                            i, train_acc, train_loss, vali_acc, vali_loss))
+                        print(
+                            'epoch %d ; train_acc %g , train_loss %g ; vali_acc %g , vali_loss %g' % (
+                                i, train_acc, train_loss, vali_acc, vali_loss))
                     if i % persist_checkpoint_interval == 0 and i >= persist_checkpoint_interval:
-                        saver.save(sess, persist_checkpoint_file+str(i))
+                        saver.save(sess, persist_checkpoint_file + str(i))
                     lr = get_lr(learning_rates, loop_epoch_nums, i)
                     train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess)
                     # summary_str = sess.run(merged_summary_op, feed_dict={
@@ -216,12 +221,17 @@ def main(_):
                 saver.restore(sess, restore_file)
             test_acc, test_loss = acc_loss_epoch(x, y_, k_probs_ph, accuracy, loss, test_set, sess)
             print('test_acc %g , test_loss %g' % (test_acc, test_loss))
-
             save_result(x, k_probs_ph, y_nn, test_set, sess)
+
+            raw_test_samples, raw_test_ls = tvt.raw_test_samples_ls()
+            raw_test_set = data_set.DataSet(raw_test_samples, raw_test_ls)
+            raw_np_pr, raw_np_gt, raw_acc = raw_test_result(x, k_probs_ph, y_nn, raw_test_set, sess)
+            print('raw test acc %g', raw_acc)
         else:
-            final_test_samples = tvt.load_final_test_samples()
-            final_test_set = data_set.DataSet(final_test_samples, None)
-            # todo: implement
+            saver.restore(sess, restore_file)
+        final_test_samples = tvt.load_final_test_samples()
+        final_test_set = data_set.DataSet(final_test_samples, None)
+        save_only_predict_result(x, k_probs_ph, y_nn, final_test_set, sess)
     end = time.time()
     print('total time %g s' % (end - start))
 
@@ -231,7 +241,24 @@ def save_only_predict_result(x, k_probs_ph, y_nn, d_set, sess):
     final_result_txt = cfg.final_result_txt
     classes = cfg.classes
     dropout_probs_size = len(cfg.dropout_probs)
-
+    idx_prs = list()
+    is_epoch_end = False
+    while not is_epoch_end:
+        batch_x, _, is_epoch_end = d_set.next_batch_fix2_order(batch_size)
+        batch_y_nn = y_nn.eval(feed_dict={
+            x: batch_x,
+            k_probs_ph: np.ones(dropout_probs_size)
+        }, session=sess)
+        idx_pr_batch = np.argmax(batch_y_nn, 1)
+        idx_prs += list(idx_pr_batch)
+    # result = load_data.convert_1hot_ls()
+    np_classes = np.asarray(classes)
+    idx = np.array(idx_prs, dtype=int)
+    results = np_classes[idx]
+    with open(final_result_txt, 'w') as f:
+        for result in results:
+            print(result, file=f)
+    print('Save predict result in', final_result_txt)
 
 
 def save_result(x, k_probs_ph, y_nn, d_set, sess):
@@ -254,6 +281,30 @@ def save_result(x, k_probs_ph, y_nn, d_set, sess):
         p_rs += list(batch_p_r)
     post_process.dump_list(g_ts, gt_pickle)
     post_process.dump_list(p_rs, pr_pickle)
+
+
+def raw_test_result(x, k_prob_ph, y_nn, raw_test_set, sess):
+    np_classes = np.array(cfg.classes)
+    batch_size = cfg.batch_size
+    dropout_probs_size = len(cfg.dropout_probs)
+    is_epoch_end = False
+    p_r_idx = list()
+    g_t = list()
+    while not is_epoch_end:
+        batch_x, batch_y, is_epoch_end = raw_test_set.next_batch_fix2(batch_size)
+        y_pr_batch = y_nn.eval(feed_dict={
+            x: batch_x, k_prob_ph: np.ones(dropout_probs_size)
+        }, session=sess)
+        p_r_idx_batch = np.argmax(y_pr_batch, axis=1)
+        # print(p_r_idx_batch.shape)
+        p_r_idx.append(p_r_idx_batch.reshape((-1, 1)))
+        g_t.append(batch_y.reshape((-1, 1)))
+    np_pr_idx = np.vstack(p_r_idx)
+    np_g_t = np.vstack(g_t)
+    np_p_r = np_classes[np_pr_idx]
+    check = (np_p_r == np_g_t)
+    acc = np.sum(check) / len(check)
+    return np_p_r, np_g_t, acc
 
 
 def train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess):
@@ -345,7 +396,7 @@ def focal_loss(labels, logits, gamma=1., alpha=1.):
 
 
 if __name__ == '__main__':
-    print_config()
+    if cfg.is_log_cfg:
+        print_config()
     tf.app.run(main=main, argv=[sys.argv[0]])
     print('id_str', cfg.id_str)
-
