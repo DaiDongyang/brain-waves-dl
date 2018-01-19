@@ -1,6 +1,6 @@
 import os
 
-id_str = 'f01182029'
+id_str = '01182357'
 
 # ================================================
 # GPU
@@ -11,9 +11,9 @@ visible_device = '3'
 
 batch_size = 256
 
-loop_epoch_nums = [100, 3, 1, 10000]
+loop_epoch_nums = [50, 200, 200, 200]
 
-learning_rates = [0.2, 0.1, 0.02, 0.0001]
+learning_rates = [0.2, 0.1, 0.05, 0.001]
 
 log_epoch_num = 5
 
@@ -40,7 +40,7 @@ restore_file = ''
 
 restart_epoch_i = 0
 
-persist_checkpoint_interval = 1000
+persist_checkpoint_interval = 200
 
 persist_checkpoint_file = 'p-my-model/p-my-model' + id_str + '_'
 
@@ -89,6 +89,7 @@ test_n = ['SC4081E0.npy', 'SC4121E0.npy', 'SC4162E0.npy', 'SC4032E0.npy',]
 #                 'b_6_even.npy', 'b_7_even.npy', 'b_8_even.npy', 'b_9_even.npy', 'b_10_even.npy',
 #                 'b_11_even.npy', 'b_12_even.npy', 'b_13_even.npy', 'b_14_even.npy', 'b_15_even.npy',
 #                 'b_16_even.npy', 'b_17_even.npy', 'b_18_even.npy', 'b_19_even.npy', 'b_20_even.npy']
+
 train_b_even = []
 vali_b_even = []
 test_b_even = []
@@ -137,7 +138,7 @@ cnn_pool_padding = 'SAME'
 
 cnn_pool_ksize = [4]
 
-cnn_pool_strides = [2]
+cnn_pool_strides = [4]
 
 
 # ===============================================
@@ -145,7 +146,7 @@ cnn_pool_strides = [2]
 
 rnn_seq_d = 25
 
-rnn_units_list = []
+rnn_units_list = [128]
 
 rnn_is_bidirection = True
 
@@ -153,7 +154,7 @@ rnn_cell_type = 'gru'  # 'gru', 'block_lstm'
 
 # ===============================================
 
-fc_w_shapes = [[int(1500*32/4), 64], [64, 3]]
+fc_w_shapes = [[256, 16], [16, 3]]
 
 # ===============================================
 # config for nn

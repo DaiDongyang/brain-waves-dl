@@ -1,6 +1,6 @@
+"""filter, fft, normalization"""
 import numpy as np
 import cfg
-from sklearn import preprocessing
 
 
 def filter_single_subset(data, filter_classes):
@@ -20,41 +20,30 @@ def filter_single_subset(data, filter_classes):
 def load_files(files, filter_classes, is_filter=True):
     """
     filter from a list of npy files, and return filtered data combined from the npy files
-    return is list of np array, each np array contain samples and ls.
     """
-    subsets = list()
+    dataset = list()
     for f in files:
         subset = np.load(f)
         if is_filter:
             subset_filter = filter_single_subset(subset, filter_classes)
-            subsets.append(subset_filter)
+            dataset.append(subset_filter)
         else:
-            subsets.append(subset)
-    return subsets
+            dataset.append(subset)
+    return np.vstack(dataset)
 
 
-def div_subset_samples_labels(subset):
+def div_samples_labels(data_set):
     """
     3001d is 3000d + 1d, samples and labels
     :param data_set: 3001d, samples
     :return: samples, labels
     """
-    labels1 = subset[:, -1] + 0.5
+    labels1 = data_set[:, -1] + 0.5
     labels = labels1.astype(int)
-    return subset[:, :-1], labels
+    return data_set[:, :-1], labels
 
 
-def div_subsets_samples_labels(subsets):
-    samples_subs = list()
-    ls_subs = list()
-    for subset in subsets:
-        samples_sub, ls_sub = div_subset_samples_labels(subset)
-        samples_subs.append(samples_sub)
-        ls_subs.append(ls_subs)
-    return samples_subs, ls_subs
-
-
-def convert_ls_1hot(ls, classes=cfg.classes):
+def convert_ls_1hot(ls, classes):
     """convert 1d labels to 1hot labels"""
     ls_1hot = np.zeros((len(ls), len(classes)))
     for i, c in enumerate(classes):
@@ -63,43 +52,33 @@ def convert_ls_1hot(ls, classes=cfg.classes):
     return ls_1hot
 
 
-def convert_1hot_ls(one_hot, classes=cfg.classes):
+def convert_1hot_ls(one_hot, classes):
     idx = np.argmax(one_hot, axis=1)
     np_classes = np.asarray(classes)
     return np_classes[idx]
 
 
-def div_subset_samples_labels_1hot(sub_data_set, classes):
+def div_samples_labels_1hot(data_set, classes):
     """
     data_set is 3000d + 1d (data_set), samples + labels
     :return: 3000d samples, 1hot labels
     """
-    samples, ls = div_subset_samples_labels(sub_data_set)
+    samples, ls = div_samples_labels(data_set)
     ls_1hot = convert_ls_1hot(ls, classes)
     return samples, ls_1hot
-
-
-def div_subsets_samples_labels_1hot(subsets, classes):
-    samples_subs = list()
-    ls_subs = list()
-    for subset in subsets:
-        samples_sub, ls_sub = div_subset_samples_labels_1hot(subset, classes)
-        samples_subs.append(samples_sub)
-        ls_subs.append(ls_subs)
-    return samples_subs, ls_subs
 
 
 def load_origin_data(files, classes, is_filter=True, is_1hot=True):
     """
     load data from specified files (files is a list)
     for example, load train samples and ls use `load_origin_data(config.train_fs, config.classes)`
-    :return: ([sample_subsets, ls_subsets])
+    :return: ls is one hot
     """
-    data_sets = load_files(files, classes, is_filter)
+    data_set = load_files(files, classes, is_filter)
     if is_1hot:
-        samples, ls = div_subsets_samples_labels_1hot(data_sets, classes)
+        samples, ls = div_samples_labels_1hot(data_set, classes)
     else:
-        samples, ls = div_subsets_samples_labels(data_sets)
+        samples, ls = div_samples_labels(data_set)
     return samples, ls
 
 
@@ -109,22 +88,6 @@ def convert_to_freq_domain(samples):
     freq_samples_all = np.fft.fft(samples, n=n, axis=1)
     freq_samples = np.abs(freq_samples_all[:, :int(n / 2)])
     return freq_samples
-
-
-def convert_subsets_to_freq_domain(samples_subs):
-    freqs_list = list()
-    for samples_sub in samples_subs:
-        freqs = convert_to_freq_domain(samples_sub)
-        freqs_list.append(freqs)
-    return freqs_list
-
-
-def norm_scale_respectively(samples_subs):
-    norm_subs = list()
-    for samples_sub in samples_subs:
-        norm_sub = preprocessing.scale(samples_sub)
-        norm_subs.append(norm_sub)
-    return norm_subs
 
 
 # normalization: standardize
@@ -194,7 +157,7 @@ class TrainValiTest:
 
         # fft
         if self.is_fft:
-            train_samples = convert_subsets_to_freq_domain(train_samples)
+            train_samples = convert_to_freq_domain(train_samples)
             vali_samples = convert_to_freq_domain(vali_samples)
             test_samples = convert_to_freq_domain(test_samples)
             raw_test_samples = convert_to_freq_domain(raw_test_samples)

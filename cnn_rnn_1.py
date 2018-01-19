@@ -1,7 +1,7 @@
 import tensorflow as tf
 import cfg
 import numpy as np
-import load_data
+import load_data_1
 import data_set
 import os
 import sys
@@ -135,7 +135,7 @@ def main(_):
     persist_checkpoint_interval = cfg.persist_checkpoint_interval
     persist_checkpoint_file = cfg.persist_checkpoint_file
 
-    tvt = load_data.TrainValiTest()
+    tvt = load_data_1.TrainValiTest()
     tvt.load()
     train_samples, train_ls = tvt.train_samples_ls()
     vali_samples, vali_ls = tvt.vali_samples_ls()
