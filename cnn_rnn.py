@@ -17,15 +17,12 @@ os.environ["CUDA_VISIBLE_DEVICES"] = cfg.visible_device
 # x : 2d tensor
 # k_probs, list of placeholder p for dropout, two elements
 def deep_nn(x, k_probs):
-    # k_probs_list = k_probs.eval()
     with tf.name_scope('reshape0'):
         x_3d = tf.reshape(x, [-1, cfg.origin_d, 1])
 
     with tf.name_scope('cnn'):
         h_cnn = cnn(x_3d)
 
-    # with tf.name_scope('dropout0'):
-    #     h_cnn_drop = tf.nn.dropout(h_cnn, k_probs[0])
     with tf.name_scope('rnn'):
         h_rnn = rnn(h_cnn)
 
@@ -40,6 +37,7 @@ def deep_nn(x, k_probs):
 
 # x is a 3d tensor, [batch_num, features, channels]
 def cnn(x, cnn_fs=cfg.conv_fs):
+    """add cnn layers for model"""
     for cnn_f in cnn_fs:
         w = weight_variable(cnn_f)
         b = bias_variable(cnn_f[-1:])
@@ -50,6 +48,7 @@ def cnn(x, cnn_fs=cfg.conv_fs):
 
 def rnn(x, rnn_units_ls=cfg.rnn_units_list, cell_type=cfg.rnn_cell_type,
         is_bi=cfg.rnn_is_bidirection):
+    """add rnn layers for model"""
     if len(rnn_units_ls) < 1:
         with tf.name_scope('reshape1'):
             [d1, d2, d3] = x.shape.as_list()
@@ -80,6 +79,7 @@ def rnn(x, rnn_units_ls=cfg.rnn_units_list, cell_type=cfg.rnn_cell_type,
 
 
 def fc(x, k_probs, start_prob_ind, w_shapes=cfg.fc_w_shapes):
+    """add fc layers for model"""
     for i, w_shape in enumerate(w_shapes):
         w_fc = weight_variable(w_shape)
         b_fc = bias_variable(w_shape[-1:])
@@ -237,6 +237,7 @@ def main(_):
 
 
 def save_only_predict_result(x, k_probs_ph, y_nn, d_set, sess):
+    """save the predict result as txt file"""
     batch_size = cfg.batch_size
     final_result_txt = cfg.final_result_txt
     classes = cfg.classes
@@ -262,6 +263,7 @@ def save_only_predict_result(x, k_probs_ph, y_nn, d_set, sess):
 
 
 def save_result(x, k_probs_ph, y_nn, d_set, sess):
+    """save the result as pickle file"""
     batch_size = cfg.batch_size
     gt_pickle = cfg.gt_pickle
     pr_pickle = cfg.pr_pickle
@@ -284,6 +286,7 @@ def save_result(x, k_probs_ph, y_nn, d_set, sess):
 
 
 def raw_test_result(x, k_prob_ph, y_nn, raw_test_set, sess):
+    """eval the accuracy of test set (raw test set, without filtering classes)"""
     np_classes = np.array(cfg.classes)
     batch_size = cfg.batch_size
     dropout_probs_size = len(cfg.dropout_probs)
@@ -308,6 +311,7 @@ def raw_test_result(x, k_prob_ph, y_nn, raw_test_set, sess):
 
 
 def train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess):
+    """train an epoch data"""
     batch_size = cfg.batch_size
     train_k_probs = cfg.dropout_probs
     is_epoch_end = False
@@ -322,6 +326,7 @@ def train_epoch(x, y_, k_probs_ph, train_step, lr_ph, lr, train_set, sess):
 
 
 def acc_loss_epoch(x, y_, k_probs_ph, acc_tf, loss_tf, d_set, sess):
+    """evaluate accuracy for the data in an epoch"""
     batch_size = cfg.batch_size
     dropout_probs_size = len(cfg.dropout_probs)
     acces = list()
@@ -349,6 +354,7 @@ def acc_loss_epoch(x, y_, k_probs_ph, acc_tf, loss_tf, d_set, sess):
 
 
 def get_lr(lrs, train_epoch_nums, current_num):
+    """return learning rate according to current epoch number"""
     acc_train_epoch_nums = accumulate(train_epoch_nums, operator.add)
     for lr, acc_train_epoch_num in zip(lrs, acc_train_epoch_nums):
         if current_num < acc_train_epoch_num:
@@ -371,16 +377,10 @@ def focal_loss(labels, logits, gamma=1., alpha=1.):
     """
     focal loss for multi-classification
     FL(p_t)=-alpha(1-p_t)^{gamma}ln(p_t)
-    Notice: logits is probability after softmax
-    gradient is d(Fl)/d(p_t) not d(Fl)/d(x) as described in paper
-    d(Fl)/d(p_t) * [p_t(1-p_t)] = d(Fl)/d(x)
-    Lin, T.-Y., Goyal, P., Girshick, R., He, K., & Dollár, P. (2017).
-    Focal Loss for Dense Object Detection, 130(4), 485–491.
-    https://doi.org/10.1016/j.ajodo.2005.02.022
     :param labels: ground truth labels, shape of [batch_size, num_cls]
-    :param logits: model's output, shape of [batch_size, num_cls]
-    :param gamma:
-    :param alpha:
+    :param logits: model's output, shape of [batch_size, num_cls], after softmax
+    :param gamma: gamma for focal_loss
+    :param alpha: alpha for focal_loss
     :return: shape of [batch_size]
     """
     epsilon = 1.e-9

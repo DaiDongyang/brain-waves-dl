@@ -1,6 +1,6 @@
 import os
 
-id_str = '01171428'
+id_str = 'final'
 
 is_log_cfg = False
 
@@ -39,7 +39,7 @@ loss_type = 0
 
 only_run_final_test = False
 
-tvt_params_pickle_name = './pickles/tvt_params.pickle'
+tvt_params_pickle_name = './pickles/tvt_params_final.pickle'
 
 is_train = True
 
@@ -51,7 +51,7 @@ restart_epoch_i = 0
 
 persist_checkpoint_interval = 1000
 
-persist_checkpoint_file = 'p-my-model/p-my-model' + id_str + '_'
+persist_checkpoint_file = 'my-model/p-my-model' + id_str + '_'
 
 # ==================================================
 # result pickle
@@ -84,7 +84,7 @@ norm_flag = 1
 ###########################################
 # config about data files
 
-final_test_f = './origin_data/data_n/SC4081E0.npy'
+final_test_f = './final_test.npy'
 
 prefix_n = './origin_data/data_n'
 prefix_b_even = './origin_data/data_b_even'

@@ -1,0 +1,242 @@
+nohup: ignoring input
+2018-01-19 17:17:45.001777: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1030] Found device 0 with properties: 
+name: GeForce GTX 1080 major: 6 minor: 1 memoryClockRate(GHz): 1.797
+pciBusID: 0000:82:00.0
+totalMemory: 7.92GiB freeMemory: 7.80GiB
+2018-01-19 17:17:45.001845: I tensorflow/core/common_runtime/gpu/gpu_device.cc:1120] Creating TensorFlow device (/device:GPU:0) -> (device: 0, name: GeForce GTX 1080, pci bus id: 0000:82:00.0, compute capability: 6.1)
+id_str = 'pca_2'
+
+is_log_cfg = True
+
+visible_device = '2'
+
+batch_size = 256
+
+loop_epoch_nums = [100, 100, 100, 100, 100]
+
+learning_rates = [0.1, 0.05, 0.02, 0.01, 0.005]
+
+log_epoch_num = 5
+
+learning_rate = 0.05
+
+loss_weights = [1, 1, 1]
+
+dropout_probs = [1, 0.2, 0.5]
+
+origin_d = 200
+
+loss_type = 0
+
+only_run_final_test = False
+
+final_result_txt = 'result' + id_str + '.txt'
+
+tvt_params_pickle_name = './pickles/tvt_params.pickle'
+
+is_train = True
+
+is_restore = False
+
+restore_file = ''
+
+restart_epoch_i = 0
+
+persist_checkpoint_interval = 1000
+
+persist_checkpoint_file = 'p-my-model/p-my-model' + id_str + '_'
+
+gt_pickle = './pickles/gt_' + id_str + '.pickle'
+
+pr_pickle = './pickles/pr_' + id_str + '.pickle'
+
+classes = [1, 2, 3]
+
+reduce_dim = 200
+
+is_fft = True
+
+fft_clip = -1
+
+is_filter_vali = False
+
+is_filter_test = False
+
+norm_flag = 1
+
+final_test_f = './origin_data/data_n/SC4161E0.npy'
+
+prefix_n = './origin_data/data_n'
+
+prefix_b_even = './origin_data/data_b_even'
+
+prefix_b_odd = './origin_data/data_b_odd'
+
+train_n = [
+
+vali_n = ['SC4161E0.npy', 'SC4071E0.npy', ]
+
+test_n = ['SC4081E0.npy', 'SC4121E0.npy', 'SC4162E0.npy', 'SC4032E0.npy', 'SC4072E0.npy', ]
+
+train_b_even = []
+
+vali_b_even = []
+
+test_b_even = []
+
+train_b_odd = []
+
+vali_b_odd = []
+
+test_b_odd = []
+
+train_n_fs = [os.path.join(prefix_n, i) for i in train_n]
+
+vali_n_fs = [os.path.join(prefix_n, i) for i in vali_n]
+
+test_n_fs = [os.path.join(prefix_n, i) for i in test_n]
+
+train_b_e_fs = [os.path.join(prefix_b_even, i) for i in train_b_even]
+
+vali_b_e_fs = [os.path.join(prefix_b_even, i) for i in vali_b_even]
+
+test_b_e_fs = [os.path.join(prefix_b_even, i) for i in test_b_even]
+
+train_b_o_fs = [os.path.join(prefix_b_odd, i) for i in train_b_odd]
+
+vali_b_o_fs = [os.path.join(prefix_b_odd, i) for i in vali_b_odd]
+
+test_b_o_fs = [os.path.join(prefix_b_odd, i) for i in test_b_odd]
+
+train_fs = train_n_fs + train_b_e_fs
+
+vali_fs = vali_n_fs + vali_b_e_fs
+
+test_fs = test_n_fs + test_b_e_fs
+
+conv_fs = [[10, 1, 16], [10, 16, 32]]
+
+conv_stride = 1
+
+conv_padding = 'SAME'
+
+cnn_pool_type = 1
+
+cnn_pool_padding = 'SAME'
+
+cnn_pool_ksize = [4]
+
+cnn_pool_strides = [2]
+
+rnn_seq_d = 25
+
+rnn_units_list = []
+
+rnn_is_bidirection = True
+
+fc_w_shapes = [[int(200*32/4), 64], [64, 3]]
+
+epoch 0 ; train_acc 0.118536 , train_loss 1.16647 ; vali_acc 0.1202 , vali_loss 1.21405
+epoch 5 ; train_acc 0.742233 , train_loss 0.789657 ; vali_acc 0.69616 , vali_loss 0.863014
+epoch 10 ; train_acc 0.737902 , train_loss 0.75087 ; vali_acc 0.686978 , vali_loss 0.853514
+epoch 15 ; train_acc 0.770079 , train_loss 0.74275 ; vali_acc 0.753756 , vali_loss 0.841081
+epoch 20 ; train_acc 0.773604 , train_loss 0.730337 ; vali_acc 0.762104 , vali_loss 0.837254
+epoch 25 ; train_acc 0.775517 , train_loss 0.708954 ; vali_acc 0.748748 , vali_loss 0.810055
+epoch 30 ; train_acc 0.785085 , train_loss 0.695294 ; vali_acc 0.760434 , vali_loss 0.777839
+epoch 35 ; train_acc 0.798781 , train_loss 0.678436 ; vali_acc 0.774624 , vali_loss 0.770406
+epoch 40 ; train_acc 0.807694 , train_loss 0.653815 ; vali_acc 0.777963 , vali_loss 0.76741
+epoch 45 ; train_acc 0.817665 , train_loss 0.677377 ; vali_acc 0.768781 , vali_loss 0.796737
+epoch 50 ; train_acc 0.815499 , train_loss 0.646395 ; vali_acc 0.782137 , vali_loss 0.750147
+epoch 55 ; train_acc 0.820585 , train_loss 0.63949 ; vali_acc 0.783806 , vali_loss 0.734011
+epoch 60 ; train_acc 0.816456 , train_loss 0.618355 ; vali_acc 0.786311 , vali_loss 0.717986
+epoch 65 ; train_acc 0.826326 , train_loss 0.607716 ; vali_acc 0.792988 , vali_loss 0.714425
+epoch 70 ; train_acc 0.829145 , train_loss 0.636945 ; vali_acc 0.790484 , vali_loss 0.736578
+epoch 75 ; train_acc 0.833073 , train_loss 0.610912 ; vali_acc 0.788815 , vali_loss 0.72503
+epoch 80 ; train_acc 0.837756 , train_loss 0.607839 ; vali_acc 0.793823 , vali_loss 0.716983
+epoch 85 ; train_acc 0.838159 , train_loss 0.602477 ; vali_acc 0.810518 , vali_loss 0.689504
+epoch 90 ; train_acc 0.837706 , train_loss 0.597653 ; vali_acc 0.799666 , vali_loss 0.7072
+epoch 95 ; train_acc 0.840375 , train_loss 0.599043 ; vali_acc 0.797162 , vali_loss 0.709789
+epoch 100 ; train_acc 0.845058 , train_loss 0.599692 ; vali_acc 0.80384 , vali_loss 0.692204
+epoch 105 ; train_acc 0.850597 , train_loss 0.587913 ; vali_acc 0.808848 , vali_loss 0.695934
+epoch 110 ; train_acc 0.84677 , train_loss 0.587956 ; vali_acc 0.799666 , vali_loss 0.685465
+epoch 115 ; train_acc 0.851201 , train_loss 0.58395 ; vali_acc 0.809683 , vali_loss 0.694518
+epoch 120 ; train_acc 0.848482 , train_loss 0.572928 ; vali_acc 0.805509 , vali_loss 0.666148
+epoch 125 ; train_acc 0.847475 , train_loss 0.558016 ; vali_acc 0.791319 , vali_loss 0.651326
+epoch 130 ; train_acc 0.85387 , train_loss 0.578234 ; vali_acc 0.803005 , vali_loss 0.682886
+epoch 135 ; train_acc 0.855229 , train_loss 0.571127 ; vali_acc 0.807179 , vali_loss 0.678003
+epoch 140 ; train_acc 0.855582 , train_loss 0.556056 ; vali_acc 0.798831 , vali_loss 0.660474
+epoch 145 ; train_acc 0.855582 , train_loss 0.560714 ; vali_acc 0.801336 , vali_loss 0.668897
+epoch 150 ; train_acc 0.855934 , train_loss 0.551957 ; vali_acc 0.804674 , vali_loss 0.661046
+epoch 155 ; train_acc 0.855884 , train_loss 0.553816 ; vali_acc 0.806344 , vali_loss 0.658918
+epoch 160 ; train_acc 0.858049 , train_loss 0.556801 ; vali_acc 0.805509 , vali_loss 0.656849
+epoch 165 ; train_acc 0.857596 , train_loss 0.546557 ; vali_acc 0.807179 , vali_loss 0.65824
+epoch 170 ; train_acc 0.861776 , train_loss 0.551308 ; vali_acc 0.796327 , vali_loss 0.654618
+epoch 175 ; train_acc 0.864293 , train_loss 0.548924 ; vali_acc 0.804674 , vali_loss 0.668069
+epoch 180 ; train_acc 0.863991 , train_loss 0.548746 ; vali_acc 0.805509 , vali_loss 0.662184
+epoch 185 ; train_acc 0.864041 , train_loss 0.539434 ; vali_acc 0.808848 , vali_loss 0.650899
+epoch 190 ; train_acc 0.866257 , train_loss 0.542426 ; vali_acc 0.80384 , vali_loss 0.658097
+epoch 195 ; train_acc 0.866408 , train_loss 0.538468 ; vali_acc 0.801336 , vali_loss 0.656479
+epoch 200 ; train_acc 0.866005 , train_loss 0.530442 ; vali_acc 0.799666 , vali_loss 0.63798
+epoch 205 ; train_acc 0.868271 , train_loss 0.529702 ; vali_acc 0.803005 , vali_loss 0.649922
+epoch 210 ; train_acc 0.866962 , train_loss 0.526622 ; vali_acc 0.808013 , vali_loss 0.639488
+epoch 215 ; train_acc 0.869077 , train_loss 0.516537 ; vali_acc 0.806344 , vali_loss 0.629993
+epoch 220 ; train_acc 0.870185 , train_loss 0.520943 ; vali_acc 0.80384 , vali_loss 0.645074
+epoch 225 ; train_acc 0.870487 , train_loss 0.516055 ; vali_acc 0.808848 , vali_loss 0.632988
+epoch 230 ; train_acc 0.869681 , train_loss 0.520754 ; vali_acc 0.809683 , vali_loss 0.64431
+epoch 235 ; train_acc 0.868926 , train_loss 0.514747 ; vali_acc 0.804674 , vali_loss 0.633861
+epoch 240 ; train_acc 0.87094 , train_loss 0.514077 ; vali_acc 0.805509 , vali_loss 0.640462
+epoch 245 ; train_acc 0.872854 , train_loss 0.514136 ; vali_acc 0.808013 , vali_loss 0.638169
+epoch 250 ; train_acc 0.872803 , train_loss 0.510111 ; vali_acc 0.808848 , vali_loss 0.636437
+epoch 255 ; train_acc 0.874969 , train_loss 0.520175 ; vali_acc 0.80384 , vali_loss 0.647502
+epoch 260 ; train_acc 0.873206 , train_loss 0.509715 ; vali_acc 0.804674 , vali_loss 0.632208
+epoch 265 ; train_acc 0.874213 , train_loss 0.511912 ; vali_acc 0.807179 , vali_loss 0.635474
+epoch 270 ; train_acc 0.874062 , train_loss 0.50864 ; vali_acc 0.800501 , vali_loss 0.634739
+epoch 275 ; train_acc 0.87517 , train_loss 0.501082 ; vali_acc 0.80384 , vali_loss 0.628062
+epoch 280 ; train_acc 0.87517 , train_loss 0.508033 ; vali_acc 0.80217 , vali_loss 0.637638
+epoch 285 ; train_acc 0.876177 , train_loss 0.509139 ; vali_acc 0.800501 , vali_loss 0.636768
+epoch 290 ; train_acc 0.877083 , train_loss 0.515315 ; vali_acc 0.803005 , vali_loss 0.643846
+epoch 295 ; train_acc 0.877285 , train_loss 0.504547 ; vali_acc 0.803005 , vali_loss 0.636316
+epoch 300 ; train_acc 0.874415 , train_loss 0.49574 ; vali_acc 0.803005 , vali_loss 0.625381
+epoch 305 ; train_acc 0.878342 , train_loss 0.50494 ; vali_acc 0.803005 , vali_loss 0.634417
+epoch 310 ; train_acc 0.877486 , train_loss 0.497784 ; vali_acc 0.803005 , vali_loss 0.629681
+epoch 315 ; train_acc 0.877637 , train_loss 0.49611 ; vali_acc 0.801336 , vali_loss 0.629404
+epoch 320 ; train_acc 0.878191 , train_loss 0.496335 ; vali_acc 0.805509 , vali_loss 0.62709
+epoch 325 ; train_acc 0.878493 , train_loss 0.499068 ; vali_acc 0.80384 , vali_loss 0.63291
+epoch 330 ; train_acc 0.87804 , train_loss 0.494659 ; vali_acc 0.80384 , vali_loss 0.628435
+epoch 335 ; train_acc 0.877637 , train_loss 0.495166 ; vali_acc 0.799666 , vali_loss 0.627039
+epoch 340 ; train_acc 0.876681 , train_loss 0.489673 ; vali_acc 0.803005 , vali_loss 0.619139
+epoch 345 ; train_acc 0.877033 , train_loss 0.488528 ; vali_acc 0.797997 , vali_loss 0.62275
+epoch 350 ; train_acc 0.879299 , train_loss 0.490043 ; vali_acc 0.807179 , vali_loss 0.624432
+epoch 355 ; train_acc 0.879702 , train_loss 0.491627 ; vali_acc 0.806344 , vali_loss 0.623266
+epoch 360 ; train_acc 0.879047 , train_loss 0.488036 ; vali_acc 0.804674 , vali_loss 0.621669
+epoch 365 ; train_acc 0.881061 , train_loss 0.489223 ; vali_acc 0.806344 , vali_loss 0.624915
+epoch 370 ; train_acc 0.881112 , train_loss 0.489179 ; vali_acc 0.804674 , vali_loss 0.623424
+epoch 375 ; train_acc 0.880054 , train_loss 0.490148 ; vali_acc 0.800501 , vali_loss 0.627557
+epoch 380 ; train_acc 0.879601 , train_loss 0.487774 ; vali_acc 0.80217 , vali_loss 0.627028
+epoch 385 ; train_acc 0.881867 , train_loss 0.487249 ; vali_acc 0.805509 , vali_loss 0.621637
+epoch 390 ; train_acc 0.881666 , train_loss 0.489266 ; vali_acc 0.799666 , vali_loss 0.625351
+epoch 395 ; train_acc 0.882522 , train_loss 0.490268 ; vali_acc 0.799666 , vali_loss 0.62752
+epoch 400 ; train_acc 0.880357 , train_loss 0.482572 ; vali_acc 0.800501 , vali_loss 0.620639
+epoch 405 ; train_acc 0.882723 , train_loss 0.485384 ; vali_acc 0.804674 , vali_loss 0.624077
+epoch 410 ; train_acc 0.882371 , train_loss 0.486965 ; vali_acc 0.808013 , vali_loss 0.62534
+epoch 415 ; train_acc 0.881011 , train_loss 0.483531 ; vali_acc 0.80217 , vali_loss 0.623508
+epoch 420 ; train_acc 0.882774 , train_loss 0.482533 ; vali_acc 0.80217 , vali_loss 0.623708
+epoch 425 ; train_acc 0.882824 , train_loss 0.483399 ; vali_acc 0.801336 , vali_loss 0.622409
+epoch 430 ; train_acc 0.882421 , train_loss 0.480683 ; vali_acc 0.803005 , vali_loss 0.620679
+epoch 435 ; train_acc 0.883076 , train_loss 0.483905 ; vali_acc 0.805509 , vali_loss 0.624713
+epoch 440 ; train_acc 0.881867 , train_loss 0.481997 ; vali_acc 0.800501 , vali_loss 0.621306
+epoch 445 ; train_acc 0.882572 , train_loss 0.480964 ; vali_acc 0.803005 , vali_loss 0.622627
+epoch 450 ; train_acc 0.883025 , train_loss 0.480649 ; vali_acc 0.806344 , vali_loss 0.62206
+epoch 455 ; train_acc 0.881918 , train_loss 0.478544 ; vali_acc 0.801336 , vali_loss 0.61951
+epoch 460 ; train_acc 0.882723 , train_loss 0.478235 ; vali_acc 0.801336 , vali_loss 0.621184
+epoch 465 ; train_acc 0.88373 , train_loss 0.481171 ; vali_acc 0.80217 , vali_loss 0.621455
+epoch 470 ; train_acc 0.882572 , train_loss 0.477779 ; vali_acc 0.801336 , vali_loss 0.620142
+epoch 475 ; train_acc 0.884032 , train_loss 0.477315 ; vali_acc 0.797997 , vali_loss 0.62097
+epoch 480 ; train_acc 0.88373 , train_loss 0.481093 ; vali_acc 0.799666 , vali_loss 0.624844
+epoch 485 ; train_acc 0.884032 , train_loss 0.47783 ; vali_acc 0.801336 , vali_loss 0.621116
+epoch 490 ; train_acc 0.882471 , train_loss 0.474716 ; vali_acc 0.80217 , vali_loss 0.617624
+epoch 495 ; train_acc 0.883176 , train_loss 0.47387 ; vali_acc 0.800501 , vali_loss 0.616937
+test_acc 0.79784 , test_loss 0.604811
+raw test acc %g 0.451035986914
+Save predict result in resultpca_2.txt
+total time 199.203 s
