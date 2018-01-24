@@ -44,5 +44,5 @@ def draw_loss(filename, title):
 
 
 if __name__ == '__main__':
-    draw_acc('./nn_cnn_wave_0.log', 'cnn wav accuracy')
+    draw_loss('./nn_cnn_rnn_3.log', 'cnn lstm loss')
     # draw_loss('./nn_cnn_wave_0.log', 'cnn wav loss')

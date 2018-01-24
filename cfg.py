@@ -1,6 +1,6 @@
 import os
 
-id_str = 'final'
+id_str = 'test_final'
 
 is_log_cfg = False
 
@@ -80,7 +80,7 @@ is_filter_vali = False
 is_filter_test = False
 
 # norm_flag 0: no normalization; 1: standards; 2: scale
-norm_flag = 1
+norm_flag = 0
 
 ###########################################
 # config about data files
